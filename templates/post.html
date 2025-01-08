@@ -1,0 +1,91 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block description %}
+    {{ post.subtitle }} - Blog Post by {{ post.author }}
+{% endblock %}
+
+{% from "bootstrap5/form.html" import render_form %}
+
+{% block content %}
+<!-- Page Header-->
+<header class="masthead" style="background-image: url('{{post.img_url}}')">
+  <div class="container position-relative px-4 px-lg-5">
+    <div class="row gx-4 gx-lg-5 justify-content-center">
+      <div class="col-md-10 col-lg-8 col-xl-7">
+        <div class="post-heading">
+          <h1>{{ post.title }}</h1>
+          <h2 class="subheading">{{ post.subtitle }}</h2>
+          <span class="meta"
+            >Posted by {{ post.author.username }}
+            on {{ post.create_date }}
+            {% if post.edit_date %}
+              <br><br>Edited on {{ post.edit_date }}
+            {% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Post Content -->
+<article>
+  <div class="container px-4 px-lg-5">
+    <div class="row gx-4 gx-lg-5 justify-content-center">
+      <div class="col-md-10 col-lg-8 col-xl-7">
+        {{ post.body|safe }}
+        {% if current_user.id == post.author.id or current_user.id == SUPER_ID %}
+          <div class="d-flex justify-content-end mb-4">
+            <a
+              class="btn btn-primary float-right"
+              href="{{ url_for('edit_post', post_title=post.title|lower|replace(' ', '-')) }}"
+                >Edit Post</a
+            >
+          </div>
+        {% endif %}
+        <!-- Divider-->
+        <hr class="my-4" />
+        <!-- Comments Area -->
+        {{ render_form(form) }}
+        <div class="comment mb-5">
+          <ul class="commentList" id="comments">
+            {% for comment in comments %}
+            <li>
+              <div class="commenterImage">
+                {% if comment.author.id == ANONYMOUS_ID %}
+                    <!-- Use a random Gravatar-like URL for anonymous users -->
+                    <img src="{{ anonymous_gravatar() | gravatar }}" alt="Anonymous Gravatar" />
+                {% else %}
+                    <!-- Use Gravatar URL for logged-in users -->
+                    <img src="{{ comment.author.email | gravatar }}" />
+                {% endif %}
+              </div>
+              <div class="commentText">
+                <span class="date sub-text">{{ comment.author.username }} | {{ comment.create_date }}
+                  {% if current_user.id != ANONYMOUS_ID and (current_user.id == comment.author_id or current_user.id == SUPER_ID) %}
+                    <a href="{{url_for('delete_comment', post_title=post.title|lower|replace(' ', '-'), comment_id=comment.id) }}" title="Soft Delete">✘</a>
+                  {% endif %}
+                </span>
+                <p>{{ comment.text }}</p>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+{% if scroll_down %}
+  <script>
+    window.onload = function() {
+      window.location.hash = "comments";
+    }
+  </script>
+{% endif %}
+
+{% endblock %}
+
