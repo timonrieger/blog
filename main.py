@@ -23,25 +23,11 @@ from flask_login import (
 )
 from functools import wraps
 from src.forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
-from src.utils import (
-    add_author,
-    find_post,
-    parse_title,
-    random_gravatar_url,
-    calculate_reading_time,
-)
-from src.config import (
-    LANGUAGE,
-    ENABLE_TRANSLATIONS,
-    DISPLAY_EDIT_DATE,
-    DISPLAY_READING_TIME,
-)
 from jinja2.exceptions import TemplateNotFound
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
-from sqlalchemy import Integer, String, Text, Boolean
-from typing import List
-from werkzeug.security import generate_password_hash, check_password_hash
+from database import db, create_all, User as UserModel, BlogComment, BlogPost
+from src.utils import add_author, find_post, parse_title, random_gravatar_url, calculate_reading_time
+from src.config import LANGUAGE, ENABLE_TRANSLATIONS, DISPLAY_EDIT_DATE, DISPLAY_READING_TIME
+import requests
 import dotenv
 import os
 
@@ -49,6 +35,9 @@ dotenv.load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DB_URI")
+db.init_app(app)
 
 ckeditor = CKEditor(app)
 Bootstrap5(app)
@@ -77,63 +66,17 @@ SUPER_ID = int(
     os.getenv("SUPER_ID")
 )  # The super user's ID that can edit other admin's content and delete every comment
 
+AUTH_URL = os.getenv("AUTH_URL")
+ANONYMOUS_ID = int(os.getenv("ANONYMOUS_ID"))
+SUPER_ID = int(os.getenv("SUPER_ID"))
 
-class Base(DeclarativeBase):
-    pass
-
-
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DB_URI", "sqlite:///blog.db")
-db = SQLAlchemy(model_class=Base)
-db.init_app(app)
-
-
-class User(db.Model, UserMixin):
-    __tablename__ = "user"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    email: Mapped[str] = mapped_column(String(150), unique=True)
-    password: Mapped[str] = mapped_column(String(150))
-    username: Mapped[str] = mapped_column(String(150), unique=True)
-    admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
-    # Relationships
-    posts: Mapped[List["Post"]] = relationship("Post", back_populates="author")
-    comments: Mapped[List["Comment"]] = relationship(
-        "Comment", back_populates="comment_author"
-    )
-
-
-class Post(db.Model):
-    __tablename__ = "post"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
-    subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
-    create_date: Mapped[str] = mapped_column(String(250), nullable=True)
-    edit_date: Mapped[str] = mapped_column(String(250), nullable=True)
-    body: Mapped[str] = mapped_column(Text, nullable=False)
-    img_url: Mapped[str] = mapped_column(String(250), nullable=False)
-    deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
-    # Relationships
-    author: Mapped[str] = relationship("User", back_populates="posts")
-    author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("user.id"))
-    comments: Mapped[List["Comment"]] = relationship(
-        "Comment", back_populates="parent_post"
-    )
-
-
-class Comment(db.Model):
-    __tablename__ = "comment"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    text: Mapped[str] = mapped_column(String, nullable=False)
-    create_date: Mapped[str] = mapped_column(String, nullable=True)
-    deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
-    # Relationships
-    author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("user.id"))
-    comment_author: Mapped[str] = relationship("User", back_populates="comments")
-    post_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("post.id"))
-    parent_post: Mapped["Post"] = relationship("Post", back_populates="comments")
-
+class User(UserMixin, UserModel):
+    __mapper_args__ = {
+        'polymorphic_identity': 'user_',
+    }
 
 with app.app_context():
-    db.create_all()
+    create_all(app)
 
 
 @app.context_processor
@@ -179,7 +122,7 @@ def home():
     page = int(request.args.get("page", 1))
     posts_per_page = 10
     offset = (page - 1) * posts_per_page
-    total_posts = Post.query.count()
+    total_posts = BlogPost.query.count()
     max_page = max(1, (total_posts + posts_per_page - 1) // posts_per_page)
 
     if page < 1 or page > max_page:
@@ -219,9 +162,9 @@ def show_post(post_title):
     if comment_form.validate_on_submit():
         if current_user.is_authenticated:
             time = dt.now().strftime("%b %d, %Y") + " at " + dt.now().strftime("%H:%M")
-            new_comment = Comment(
+            new_comment = BlogComment(
                 text=comment_form.comment.data,
-                parent_post=db.get_or_404(Post, post.id),
+                parent_post=db.get_or_404(BlogPost, post.id),
                 author_id=current_user.id,
                 create_date=time,
             )
@@ -251,7 +194,7 @@ def show_post(post_title):
 def new_post():
     form = CreatePostForm()
     if form.validate_on_submit():
-        new_post = Post(
+        new_post = BlogPost(
             title=form.title.data,
             subtitle=form.subtitle.data,
             body=form.body.data,
@@ -269,7 +212,7 @@ def new_post():
 @login_required
 @admin_required
 def edit_post(post_title):
-    post = find_post(post_title, Post, User)
+    post = find_post(post_title, BlogPost, User)
     if not post:
         flash(f"No post found for title {post_title}!", "danger")
         return redirect(url_for("home"))
@@ -291,7 +234,7 @@ def edit_post(post_title):
 @login_required
 @admin_required
 def delete_post(post_title):
-    post = find_post(post_title, Post, User)
+    post = find_post(post_title, BlogPost, User)
     if not post:
         flash(f"No post found for title {post_title}!", "danger")
         return redirect(url_for("home"))
@@ -313,7 +256,7 @@ def delete_post(post_title):
 
 @app.route("/<post_title>/restore")
 def restore_post(post_title):
-    post = find_post(post_title, Post, User)
+    post = find_post(post_title, BlogPost, User)
     if current_user.id == ANONYMOUS_ID:
         flash("As an anonymous user you cannot restore comments!", "danger")
     if current_user.id == post.author_id or current_user.id == SUPER_ID:
@@ -329,8 +272,8 @@ def restore_post(post_title):
 @app.route("/<post_title>/delete/comment/<int:comment_id>")
 @login_required
 def delete_comment(post_title, comment_id):
-    comment = db.get_or_404(Comment, comment_id)
-
+    comment = db.get_or_404(BlogComment, comment_id)
+    
     if current_user.id == ANONYMOUS_ID:
         flash("As an anonymous user you cannot delete comments!", "danger")
     elif current_user.id == comment.author_id or current_user.id == SUPER_ID:
@@ -351,8 +294,8 @@ def delete_comment(post_title, comment_id):
 @app.route("/<post_title>/restore/comment/<int:comment_id>")
 @login_required
 def restore_comment(post_title, comment_id):
-    comment = db.get_or_404(Comment, comment_id)
-
+    comment = db.get_or_404(BlogComment, comment_id)
+    
     if current_user.id == comment.author_id or current_user.id == SUPER_ID:
         comment.deleted = False
         db.session.commit()
@@ -379,15 +322,16 @@ def login():
         email = form.email.data
         password = form.password.data
         user = User.query.filter_by(email=email).first()
-        if not user:
-            flash("No account found. Register first!", "danger")
-            return redirect(url_for("register"))
-        if check_password_hash(user.password, password):
+        data = {
+            "email": email,
+            "password": password
+        }
+        response = requests.post(url=f"{AUTH_URL}/login", json=data)
+        if response.status_code == 200:
+            flash(response.json()['message'], "success")
             login_user(user)
-            flash(f"Login successful, {user.username}!", "success")
             return redirect(url_for("home"))
-        else:
-            flash("Invalid credentials!")
+        flash(response.json()['message'], "danger")
 
     if request.args.get("u") == str(ANONYMOUS_ID):
         user = User.query.filter_by(id=ANONYMOUS_ID).first()
@@ -408,24 +352,15 @@ def register():
         email = form.email.data
         password = form.password.data
         username = form.username.data
-        user = User.query.filter_by(email=email).first()
-        if user:
-            flash("Already registered! Login instead.", "danger")
-            return redirect(url_for("login"))
-
-        hashed_password = generate_password_hash(password, "pbkdf2:sha256", 8)
-        if not user:
-            new_user = User(
-                email=email,
-                password=hashed_password,
-                username=username,
-            )
-            db.session.add(new_user)
-            db.session.commit()
-            flash(f"Registration and login successful, {new_user.username}!", "success")
-            login_user(new_user)
-            return redirect(url_for("home"))
-
+        data = {
+            "email": email,
+            "password": password,
+            "username": username,
+            "then": "https:blog.timonrieger.de/login"
+        }
+        response = requests.post(f"{AUTH_URL}/register", json=data)
+        flash(response.json()['message'], "success") if response.status_code == 200 else flash(response.json()['message'], "danger")
+        
     return render_template("register.html", form=form)
 
 
