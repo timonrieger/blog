@@ -130,9 +130,9 @@ def home():
 
     result = (
         db.session.execute(
-            db.select(Post)
-            .order_by(Post.id.desc())
-            .where(Post.deleted == False)
+            db.select(BlogPost)
+            .order_by(BlogPost.id.desc())
+            .where(BlogPost.deleted == False)
             .limit(posts_per_page)
             .offset(offset)
         )
@@ -147,11 +147,11 @@ def home():
 
 @app.route("/<post_title>", methods=["GET", "POST"])
 def show_post(post_title):
-    post = find_post(post_title, Post, User)
+    post = find_post(post_title, BlogPost, User)
     result = (
         db.session.execute(
-            db.select(Comment).where(
-                Comment.post_id == post.id, Comment.deleted == False
+            db.select(BlogComment).where(
+                BlogComment.post_id == post.id, BlogComment.deleted == False
             )
         )
         .scalars()
