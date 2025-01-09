@@ -1,7 +1,4 @@
 .DS_Store
-static/uploads/
-static/assets/code
-cleaner.*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

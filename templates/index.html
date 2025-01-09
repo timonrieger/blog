@@ -1,9 +1,9 @@
 {% extends "layout.html" %}
 
-{% block title %}Brain Snippets Blog | Timon Rieger{% endblock %}
+{% block title %}Blog Boiler Pro built with Flask{% endblock %}
 
 {% block description %}
-    Read my latest blog post on Brain Snippets. Here I write about Ideas, Thoughts, Conclusions I'd like to share with you.
+    Read my latest blog post on Blog Boiler Pro. Here I write about Ideas, Thoughts, Conclusions I'd like to share with you.
 {% endblock %}
 
 {% block content %}
@@ -15,7 +15,7 @@
     <div class="row gx-4 gx-lg-5 justify-content-center">
       <div class="col-md-10 col-lg-8 col-xl-7">
         <div class="site-heading">
-          <h1>Brain Snippets</h1>
+          <h1>Blog Boiler Pro</h1>
           <span class="subheading">Ideas, Thoughts and Conclusions I'd like to share with you.</span>
         </div>
       </div>
@@ -46,7 +46,7 @@
       {% endfor %}
 
       <!-- New Post -->
-      {% if current_user.is_authenticated %}
+      {% if current_user.admin %}
       <div class="d-flex justify-content-end mb-4">
         <a
           class="btn btn-primary float-right"

@@ -10829,8 +10829,8 @@ header.masthead .post-heading .meta a {
   display:table-cell;
 }
 .commenterImage {
-  width:2em;
-  margin-right:1em;
+  width:30px;
+  margin-right:5px;
   height:100%;
   float:left;
 }
@@ -10852,19 +10852,18 @@ header.masthead .post-heading .meta a {
   position: fixed;
   bottom: 1em;
   right: 1em;
-  width: 20em;
+  width: 30em;
 }
 
 .exit-btn {
-  size: 1em;
   position: absolute;
-  top: 0.1em;
-  right: 0.1em;
+  top: 0;
+  right: 0;
   background-color: transparent;
   border: none;
 }
 
 .flash {
   text-align: center;
-  margin: 4em;
+  margin: 2em;
 }
