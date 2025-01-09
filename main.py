@@ -43,7 +43,12 @@ class User(UserMixin, UserModel):
     }
 
 with app.app_context():
-    create_all(app)
+    db.create_all()
+
+
+@app.context_processor
+def global_vars():
+    return dict(current_url=request.url_root, SUPER_ID=SUPER_ID, ANONYMOUS_ID=ANONYMOUS_ID, LANGUAGE=LANGUAGE, ENABLE_TRANSLATIONS=ENABLE_TRANSLATIONS, DISPLAY_EDIT_DATE=DISPLAY_EDIT_DATE, DISPLAY_READING_TIME=DISPLAY_READING_TIME)
 
 
 @login_manager.user_loader
