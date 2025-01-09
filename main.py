@@ -188,7 +188,7 @@ def home():
     result = (
         db.session.execute(
             db.select(Post)
-            .order_by(Post.create_date.desc())
+            .order_by(Post.id.desc())
             .where(Post.deleted == False)
             .limit(posts_per_page)
             .offset(offset)
