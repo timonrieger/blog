@@ -10,7 +10,7 @@ def find_post(title, post_model, user_model):
   all_posts = post_model.query.all()
   post_list = [item for item in all_posts if parse_title(item.title) == title]
   if not post_list:
-     return None
+    raise NotFound()
   post = post_list[0]
   post.author = user_model.query.filter_by(id=post.author_id).first()
   return post
