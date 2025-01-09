@@ -10829,8 +10829,8 @@ header.masthead .post-heading .meta a {
   display:table-cell;
 }
 .commenterImage {
-  width:30px;
-  margin-right:5px;
+  width:3em;
+  margin-right:1em;
   height:100%;
   float:left;
 }

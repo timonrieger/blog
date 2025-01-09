@@ -81,7 +81,7 @@
                 <a
                   class="nav-link px-lg-3 py-3 py-lg-4"
                   href="{{ url_for('logout') }}"
-                  >Log Out, {{ current_user.username }}</a
+                  >Log Out, <span translate="no">{{ current_user.username }}</span></a
                 >
               </li>
             {% endif %}

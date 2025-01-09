@@ -69,7 +69,9 @@
               </div>
               <div class="commentText">
                 <span class="date sub-text"
-                  >{{ comment.author.username }} | {{ comment.create_date }} {%
+                  >
+                  <span translate="no">{{ comment.author.username }}</span>
+                   | {{ comment.create_date }} {%
                   if current_user.id != ANONYMOUS_ID and (current_user.id ==
                   comment.author_id or current_user.id == SUPER_ID) %}
                   <a
