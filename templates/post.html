@@ -17,10 +17,10 @@
             <span translate="no"><a href="{{ url_for('show_author', author=post.author.username|lower|replace(' ', '-'))}}">{{ post.author.username }}</a></span>
             on {{ post.create_date }}
             {% if post.edit_date and DISPLAY_EDIT_DATE %} 
-              | edited on {{ post.edit_date }}
+            &#124; edited on {{ post.edit_date }}
             {% endif %}
             {% if DISPLAY_READING_TIME %}
-                | {{ calculate_reading_time(post.body|safe) }} minutes
+            &#124; {{ calculate_reading_time(post.body|safe) }} minutes
             {% endif %}
           </span>
         </div>
@@ -78,7 +78,7 @@
                   <a
                     href="{{url_for('delete_comment', post_title=post.title|lower|replace(' ', '-'), comment_id=comment.id) }}"
                     title="Soft Delete"
-                    >✘</a
+                    >&#x2718;</a
                   >
                   {% endif %}
                 </span>

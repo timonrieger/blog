@@ -27,7 +27,7 @@
   <div class="container">
     <div class="row">
       <div class="col-lg-8 col-md-10 mx-auto">
-        <p>For commenting anonymously click <a href="{{ url_for('login', u=ANONYMOUS_ID) }}">here</a>.</p>
+        <p>For commenting anonymously login <a href="{{ url_for('login', u=ANONYMOUS_ID, next=request.args.get('next')) }}">here</a>.</p>
         {{ render_form(form) }}
       </div>
     </div>

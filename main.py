@@ -207,7 +207,7 @@ def show_post(post_title):
         db.session.execute(
             db.select(Comment).where(
                 Comment.post_id == post.id, Comment.deleted == False
-            )
+            ).order_by(Comment.id.asc())
         )
         .scalars()
         .all()

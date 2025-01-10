@@ -1,5 +1,5 @@
 <h2 align="center">Blog Boiler Pro</h2>
-<p align="center">A lightweight Flask-based boilerplate for creating a blog, utilizing n:point for simple data storage.</p>
+<p align="center">A lightweight Flask-based boilerplate for creating an advanced blog with database storage.</p>
 <p align="center">
 <img src="https://img.shields.io/badge/status-under%20development-blue"/>
 <img src="https://img.shields.io/github/license/timonrieger/blog-boiler-pro
@@ -32,7 +32,7 @@
 
 ## Intention
 
-This project is a advanced blog implementation, designed for users who prefer a straightforward solution. If you don't require features like user management, an admin interface, or database storage, consider checking out [the lite version](https://github.com/timonrieger/blog-boiler-lite).
+This project is a advanced blog implementation, designed for users who prefer a more complete solution. If you don't require features like user management, an admin interface, or database storage, consider checking out [the lite version](https://github.com/timonrieger/blog-boiler-lite).
 
 ## Demo
 
@@ -45,14 +45,13 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 - **User-Friendly Text Editor:** A simple and intuitive editor for creating and editing blog posts provided by CKEditor 4.
 - **Responsive Design with Bootstrap:** The site automatically adjusts to various screen sizes and devices for seamless usability.
 - **Google Translate Support:** Allow posts to be translated from your writing language to other languages. To disable, set the `ENABLE_TRANSLATIONS=False` in `src/config.py`.
-- **Collaboration Support:** Share your n:point credentials with co-authors to collaborate on blog posts.
+- **Collaboration Support:** Give admin access to co-authors to collaborate on the blog.
 - **Secure, SEO Optimized, and Fast:** Optimized for performance and search engine visibility according to [Checkbot](https://checkbot.io/).
 - **Customizable About Page:** Personalize an "About" page for each author to share their story or expertise.
 - **User Management:** Basic functionality to manage users: registration, login, anonymous users, and admin management.
 - **Admin Privileges:** Assign co-authors the admin role to write, edit, delete their blog posts and all comments. You remain the Super Admin.
 - **Commenting System:** Users can now leave comments on posts, with moderation capabilities for the comment author and admins.
 - **Soft deletion with undo option**: Deleting posts and comments does not erase them entirely, but rather flag and hide them. 
-- **
 
 
 ## Limitations
@@ -60,7 +59,7 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 - No extension or plugin system
 - No analytics by default (which I regard as positive)
 - No file upload
-- No account settings for users ([add an authentication microservice](https://github.com/timonrieger/auth-service))
+- No account settings for users, like confirmation email or password reset ([add an authentication microservice](https://github.com/timonrieger/auth-service))
 
 ## Setup
 
@@ -97,9 +96,9 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 6. Set the required **environment variables** in a `.env` at the root directory. 
    ```
    SECRET_KEY=yoursecretkey
-   DB_URI=postgresql://username:password@ahost:port/db # (https://supabase.com/) is free
+   DB_URI=postgresql://username:password@ahost:port/db # https://supabase.com/ is free
    ANONYMOUS_ID=1 # register the first user with username "anonymous" or similar for letting users comment anonymously
-   SUPER_ID=2 # register yourself, set yourself as admin in the database and define your ID as the Super Admin
+   SUPER_ID=2 # register yourself, set as admin in the database and define your ID in the `.env`
    ```
 
 7. **Run the application**
@@ -132,7 +131,7 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 ## Configuration
 
 1. **Add Images**  
-   Add the images you want to use in the `static/uploads/` directory with your image files (I personally name the files with [autoincrementing numbers](https://github.com/timonrieger/blog/tree/main/static/uploads)) .
+   Add the images you want to use in the `static/uploads/` directory with your image files (I personally name the files with [autoincrementing numbers](https://github.com/timonrieger/blog/tree/main/static/uploads)).
 
 2. **Modify Static Assets**  
    Feel free to modify the following directories and files:
@@ -153,7 +152,7 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 - **New Post**: `/new` - Create a new blog post.
 - **Edit Post**: `/<post_title>/edit` - Edit an existing blog post.
 - **Delete Post**: `/<post_title>/delete` - Soft deletes a single blog post.
-- **Restore Post**: `/<post_title>/delete` - Restores/Unhides a single blog post. 
+- **Restore Post**: `/<post_title>/restore` - Restores/Unhides a single blog post. 
 - **Delete Comment**: `/<post_title>/delete/comment/<int:comment_id>` - Soft deletes a single comment.
 - **Restore Comment**: `/<post_title>/restore/comment/<int:comment_id>` - Restores/Unhides a single comment. 
 - **Show Author** - `/author/<author>` - View an author's page.
