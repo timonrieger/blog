@@ -77,6 +77,16 @@
                 >
               </li>
             {% else %}
+              <!-- New Post -->
+              {% if current_user.admin %}
+              <li class="nav-item">
+                  <a
+                    class="nav-link px-lg-3 py-3 py-lg-4"
+                    href="{{url_for('new_post')}}"
+                    >New Post &#43;</a
+                  >
+              </li>
+              {% endif %}
               <li class="nav-item">
                 <a
                   class="nav-link px-lg-3 py-3 py-lg-4"
@@ -93,7 +103,7 @@
       <div id="flash-container">
         {% for category, message in get_flashed_messages(with_categories=true) %}
           <div class="alert flash alert-{{ category }} my-4" role="alert">
-            <button onclick="this.parentElement.style.display='none'" class="exit-btn">✘</button>
+            <button onclick="this.parentElement.style.display='none'" class="exit-btn">&#x2718;</button>
             <h5>{{ message|safe }}</h5>
           </div>
         {% endfor %}

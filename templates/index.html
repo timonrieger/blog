@@ -34,27 +34,17 @@
           <h3 class="post-subtitle">{{ post.subtitle }}</h3>
         </a>
         <p class="post-meta">
-          Posted by {{ post.author.username }}
+          Posted by 
+          <a href="{{ url_for('show_author', author=post.author.username|lower|replace(' ', '-'))}}">{{ post.author.username }}</a>
           on {{ post.create_date }}
           {% if current_user.id == post.author.id or current_user.id == SUPER_ID %}
-            <a href="{{ url_for('delete_post', post_title=post.title|lower|replace(' ', '-')) }}" title="Soft Delete">✘</a>
+            <a href="{{ url_for('delete_post', post_title=post.title|lower|replace(' ', '-')) }}" title="Soft Delete">&#x2718;</a>
           {% endif %}
         </p>
       </div>
       <!-- Divider-->
       <hr class="my-4" />
       {% endfor %}
-
-      <!-- New Post -->
-      {% if current_user.admin %}
-      <div class="d-flex justify-content-end mb-4">
-        <a
-          class="btn btn-primary float-right"
-          href="{{url_for('new_post')}}"
-          >Create New Post</a
-        >
-      </div>
-      {% endif %}
 
       <!-- Pager-->
       <div class="d-flex justify-content-end mb-4" style="gap: 10px;">

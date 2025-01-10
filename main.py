@@ -44,6 +44,9 @@ Bootstrap5(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+login_manager.login_message = u"You need to login to use this feature. Use your own account or login anonymously!"
+login_manager.login_view = "/login"
+login_manager.login_message_category = "danger"
 
 cache = Cache(config={"CACHE_TYPE": "SimpleCache"})
 cache.init_app(app)
@@ -97,18 +100,13 @@ def load_user(user_id):
     return db.get_or_404(User, user_id)
 
 
-@login_manager.unauthorized_handler
-def unauthorized():
-    return redirect(url_for("login"))
-
-
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         user = User.query.filter_by(id=current_user.id).first()
         if not user.admin:
             flash(
-                "You do not have the necessary permissions to complete this request. Admin access is required!",
+                "You do not have the necessary permissions to use this feature. Admin access is required!",
                 "danger",
             )
             return redirect(url_for("home"))
@@ -152,7 +150,7 @@ def show_post(post_title):
         db.session.execute(
             db.select(BlogComment).where(
                 BlogComment.post_id == post.id, BlogComment.deleted == False
-            )
+            ).order_by(BlogComment.id.asc())
         )
         .scalars()
         .all()
@@ -172,11 +170,8 @@ def show_post(post_title):
             db.session.commit()
             return redirect(url_for("show_post", post_title=post_title, commented=True))
         else:
-            flash(
-                "You need to login or register to comment. User your own account or login as an anonymous user!",
-                "danger",
-            )
-            return redirect(url_for("login"))
+            return login_manager.unauthorized()
+
     return render_template(
         "post.html",
         post=post,
@@ -317,6 +312,7 @@ def show_author(author):
 @app.route("/login", methods=["GET", "POST"])
 def login():
     form = LoginForm()
+    redirect_to = request.args.get("next")
 
     if form.validate_on_submit():
         email = form.email.data
@@ -330,6 +326,8 @@ def login():
         if response.status_code == 200:
             flash(response.json()['message'], "success")
             login_user(user)
+            if redirect_to:
+                return redirect(redirect_to)
             return redirect(url_for("home"))
         flash(response.json()['message'], "danger")
 
@@ -339,6 +337,8 @@ def login():
         flash(
             f"Logged in as an anonymous user. Start commenting anonymously!", "success"
         )
+        if redirect_to:
+            return redirect(redirect_to)
         return redirect(url_for("home"))
 
     return render_template("login.html", form=form)
