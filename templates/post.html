@@ -48,11 +48,12 @@
         </div>
         {% endif %}
         <!-- Divider-->
-        <hr class="my-4" />
+        <hr class="my-4" id="comments"/>
         <!-- Comments Area -->
         {{ render_form(form) }}
         <div class="comment mb-5">
-          <ul class="commentList" id="comments">
+          &gt; <a href="https://github.com/timonrieger/blog-boiler-pro/blob/main/.github/demo/comments.png">How to comment</a>
+          <ul class="commentList">
             {% for comment in comments %}
             <li>
               <div class="commenterImage">
@@ -70,10 +71,10 @@
               <div class="commentText">
                 <span class="date sub-text"
                   >
-                  <span translate="no">{{ comment.author.username }}</span>
-                   | {{ comment.create_date }} {%
-                  if current_user.id != ANONYMOUS_ID and (current_user.id ==
-                  comment.author_id or current_user.id == SUPER_ID) %}
+                  <span translate="no">{{ comment.author.username }}</span>{% if comment.author.admin %} &#10004;{% endif %}
+                  &#124; {{ comment.create_date }} 
+                  
+                  {% if current_user.id != ANONYMOUS_ID and (current_user.id == comment.author_id or current_user.id == SUPER_ID) %}
                   <a
                     href="{{url_for('delete_comment', post_title=post.title|lower|replace(' ', '-'), comment_id=comment.id) }}"
                     title="Soft Delete"
@@ -81,7 +82,7 @@
                   >
                   {% endif %}
                 </span>
-                <p>{{ comment.text }}</p>
+                <p>{{ comment.text|safe }}</p>
               </div>
             </li>
             {% endfor %}
