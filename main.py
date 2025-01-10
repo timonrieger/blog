@@ -85,7 +85,6 @@ with app.app_context():
 @app.context_processor
 def global_vars():
     return dict(
-        current_url=request.url_root,
         SUPER_ID=SUPER_ID,
         ANONYMOUS_ID=ANONYMOUS_ID,
         LANGUAGE=LANGUAGE,
@@ -301,12 +300,9 @@ def restore_comment(post_title, comment_id):
         return redirect(url_for("show_post", post_title=post_title))
 
 
-@app.route("/author/<author>")
-def show_author(author):
-    try:
-        return render_template(f"authors/{author}.html")
-    except TemplateNotFound:
-        abort(404)
+@app.route("/author")
+def show_author():
+    return redirect(f"https://timonrieger.de?utm_source={request.url_root}")
 
 
 @app.route("/login", methods=["GET", "POST"])

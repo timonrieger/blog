@@ -14,7 +14,7 @@
           <hr>
           <span class="meta">
             by 
-            <span translate="no"><a href="{{ url_for('show_author', author=post.author.username|lower|replace(' ', '-'))}}">{{ post.author.username }}</a></span>
+            <span translate="no"><a href="{{ url_for('show_author')}}">{{ post.author.username }}</a></span>
             on {{ post.create_date }}
             {% if post.edit_date and DISPLAY_EDIT_DATE %} 
             &#124; edited on {{ post.edit_date }}

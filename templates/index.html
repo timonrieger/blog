@@ -35,7 +35,7 @@
         </a>
         <p class="post-meta">
           Posted by 
-          <a href="{{ url_for('show_author', author=post.author.username|lower|replace(' ', '-'))}}">{{ post.author.username }}</a>
+          <a href="{{ url_for('show_author')}}">{{ post.author.username }}</a>
           on {{ post.create_date }}
           {% if current_user.id == post.author.id or current_user.id == SUPER_ID %}
             <a href="{{ url_for('delete_post', post_title=post.title|lower|replace(' ', '-')) }}" title="Soft Delete">&#x2718;</a>
