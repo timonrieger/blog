@@ -13,17 +13,33 @@
 <table>
 	<tbody>
 		<tr>
-			<td width="33%">
+			<td width="14.3%">
 				Home
 				<img src=".github/demo/home.png">
 			</td>
-         <td width="33%">
+         <td width="14.3%">
+				Login
+				<img src=".github/demo/login.png">
+			</td>
+         <td width="14.3%">
+				Register
+				<img src=".github/demo/register.png">
+			</td>
+         <td width="14.3%">
 				Post Page
 				<img src=".github/demo/post.png">
 			</td>
-			<td width="33%">
+			<td width="14.3%">
+				Comment View
+				<img src=".github/demo/comments.png">
+			</td>
+         <td width="14.3%">
 				Post Panel
 				<img src=".github/demo/panel.png">
+			</td>
+         <td width="14.3%">
+				Author Page
+				<img src=".github/demo/author.png">
 			</td>
 		</tr>
 	</tbody>
