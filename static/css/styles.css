@@ -968,6 +968,11 @@ header.masthead .post-heading .meta a {
   }
 }
 
+.post-toolbar {
+  display: flex;
+  justify-content: space-between;
+}
+
 
 /* Commment Styling */
 

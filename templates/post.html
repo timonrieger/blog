@@ -34,19 +34,21 @@
   <div class="container px-4 px-lg-5">
     <div class="row gx-4 gx-lg-5 justify-content-center">
       <div class="col-md-10 col-lg-8 col-xl-7">
-        {% if ENABLE_TRANSLATIONS %}
-            <div id="google_translate_element"></div>
-        {% endif %}
-        {{ post.body|safe }} 
-        {% if current_user.id == post.author.id or current_user.id == SUPER_ID %}
-        <div class="d-flex justify-content-end mb-4">
-          <a
-            class="btn btn-primary float-right"
-            href="{{ url_for('edit_post', post_title=post.title|lower|replace(' ', '-')) }}"
-            >Edit Post</a
-          >
+        <div class="post-toolbar">
+          {% if ENABLE_TRANSLATIONS %}
+              <div id="google_translate_element"></div>
+          {% endif %}
+          {% if current_user.id == post.author.id or current_user.id == SUPER_ID %}
+          <div class="d-flex justify-content-end mb-4">
+            <a
+              class="btn btn-primary float-right"
+              href="{{ url_for('edit_post', post_title=post.title|lower|replace(' ', '-')) }}"
+              >Edit Post</a
+            >
+          </div>
+          {% endif %}
         </div>
-        {% endif %}
+        {{ post.body|safe }} 
         <!-- Divider-->
         <hr class="my-4" id="comments"/>
         <!-- Comments Area -->
