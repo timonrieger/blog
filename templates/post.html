@@ -1,6 +1,6 @@
 {% extends "layout.html" %} 
-{% block title %}{{ post.title }}{% endblock %} 
-{% block description %} {{ post.subtitle }} - Blog Post by {{ post.author }} {%endblock %} 
+{% block title %}{{ post.title }} &#124; Blog Boiler Pro{% endblock %}
+{% block description %}{{ post.title }} &#45; {{ post.subtitle }} &#45; by {{ post.author.username }}{%endblock %} 
 {% from "bootstrap5/form.html" import render_form %} 
 {% block content %}
 <!-- Page Header-->
