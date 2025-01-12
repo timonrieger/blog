@@ -1,6 +1,7 @@
 from datetime import datetime as dt, date
 from flask import (
     Flask,
+    Response,
     abort,
     render_template,
     redirect,
@@ -437,9 +438,63 @@ def logout():
     return redirect(url_for("home"))
 
 
+@app.route("/rss.xml")
+def rss_feed():
+
+    result = (
+        db.session.execute(
+            db.select(Post)
+            .order_by(Post.id.desc())
+            .where(Post.deleted == False, Post.is_draft == False)
+        )
+        .scalars()
+        .all()
+    )
+
+    posts = add_author(result, User)
+
+    # Generate RSS feed
+    rss_items = []
+    for post in posts:
+        post_date = dt.strptime(post.create_date, "%B %d, %Y")
+        rss_items.append(f"""
+        <item>
+            <title>{post.title}</title>
+            <guid isPermaLink="true">{ url_for('show_post', post_title=post.title.lower().replace(' ', '-'), _external=True) }</guid>
+            <description>{post.subtitle}</description>
+            <pubDate>{post_date.strftime('%a, %d %b %Y %H:%M:%S +0000')}</pubDate>
+            <dc:creator>{post.author.username}</dc:creator>
+        </item>
+        """)
+
+    rss_feed = f"""<?xml version="1.0" encoding="UTF-8" ?>
+    <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+        <channel>
+            <title>Blog Boiler Pro RSS Feed</title>
+            <link>{url_for('home', _external=True)}</link>
+            <atom:link href="{ url_for('rss_feed', _external=True) }" rel="self" type="application/rss+xml" />
+            <description>Latest posts from Blog Boiler Pro</description>
+            <language>en-us</language>
+            {''.join(rss_items)}
+        </channel>
+    </rss>
+    """
+
+    return Response(rss_feed, mimetype="application/rss+xml")
+
+
 @app.route("/robots.txt")
 def static_from_root():
     return send_from_directory(app.static_folder, request.path[1:])
+
+
+@app.route("/rss")
+def rss_redirect():
+    return redirect(url_for("rss_feed"))
+
+@app.route("/feed")
+def feed_redirect():
+    return redirect(url_for("rss_feed"))
 
 
 @app.errorhandler(404)
