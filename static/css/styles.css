@@ -1039,9 +1039,19 @@ header.masthead .post-heading .meta a {
 }
 
 .sub-text {
-  color:#aaa;
-  font-family:verdana;
-  font-size:13px;
+  color: #aaa;
+  font-family: verdana;
+  font-size: 13px;
+}
+
+.sub-text a {
+  color: inherit; 
+  text-decoration: none;
+  margin-left: 0.2em;
+}
+
+.sub-text a:hover {
+  color: var(--bs-link-hover-color);
 }
 
 #flash-container {

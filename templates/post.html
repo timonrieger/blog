@@ -86,12 +86,20 @@
                   <span translate="no">{{ comment.author.username }}</span>{% if comment.author.admin %} &#10004;{% endif %}
                   &#124; {{ comment.create_date }} 
                   
-                  {% if current_user.id != ANONYMOUS_ID and (current_user.id == comment.author_id or current_user.id == SUPER_ID) %}
-                  <a
-                    href="{{url_for('delete_comment', post_title=post.title|lower|replace(' ', '-'), comment_id=comment.id) }}"
-                    title="Soft Delete"
-                    >&#x2718;</a
-                  >
+                  {% if current_user.id != ANONYMOUS_ID and current_user.id == comment.author_id %}
+                    &#124;
+                    <a
+                      href="{{url_for('show_post', post_title=post.title|lower|replace(' ', '-'), edit_comment=comment.id) }}"
+                      title="Edit comment"
+                      >&#9998;</a
+                    >
+                      {% if current_user.id == SUPER_ID %}
+                        <a
+                          href="{{url_for('delete_comment', post_title=post.title|lower|replace(' ', '-'), comment_id=comment.id) }}"
+                          title="Soft Delete"
+                          >&#x2718;</a
+                        >
+                      {% endif %}
                   {% endif %}
                 </span>
                 <p>{{ comment.text|safe }}</p>

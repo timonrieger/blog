@@ -244,21 +244,41 @@ def show_post(post_title):
         .all()
     )
     comments = add_author(result, User)[::-1]
-    comment_form = CommentForm()
-    if comment_form.validate_on_submit():
-        if current_user.is_authenticated:
-            time = dt.now().strftime("%b %d, %Y") + " at " + dt.now().strftime("%H:%M")
-            new_comment = Comment(
-                text=comment_form.comment.data,
-                parent_post=db.get_or_404(Post, post.id),
-                author_id=current_user.id,
-                create_date=time,
-            )
-            db.session.add(new_comment)
-            db.session.commit()
+    edit_comment = request.args.get("edit_comment")
+    if edit_comment:
+        if not current_user.is_authenticated or current_user.id == ANONYMOUS_ID:
+            flash("As an anonymous user you cannot edit comments!", "danger")
             return redirect(url_for("show_post", post_title=post_title, commented=True))
-        else:
-            return login_manager.unauthorized()
+        comment = Comment.query.filter_by(id=edit_comment).first()
+        if not comment or comment.deleted:
+            abort(404)
+        if comment.author_id != current_user.id:
+            flash("You are not the author of the comment!", "danger") 
+            return redirect(url_for("show_post", post_title=post_title, commented=True))
+        comment_form = CommentForm(comment=comment.text)
+        if comment_form.validate_on_submit():
+            comment.text = comment_form.comment.data
+            db.session.commit()
+            flash("Commment successfully updated!", "success")
+            return redirect(url_for("show_post", post_title=post_title, commented=True))
+    
+    else:
+        comment_form = CommentForm()
+        if comment_form.validate_on_submit():
+            if current_user.is_authenticated:
+                time = dt.now().strftime("%b %d, %Y") + " at " + dt.now().strftime("%H:%M")
+                new_comment = Comment(
+                    text=comment_form.comment.data,
+                    parent_post=db.get_or_404(Post, post.id),
+                    author_id=current_user.id,
+                    create_date=time,
+                )
+                db.session.add(new_comment)
+                db.session.commit()
+                flash("Commment successfully posted!", "success")
+                return redirect(url_for("show_post", post_title=post_title, commented=True))
+            else:
+                return login_manager.unauthorized()
 
     return render_template(
         "post.html",
@@ -267,7 +287,7 @@ def show_post(post_title):
         form=comment_form,
         anonymous_gravatar=random_gravatar_url,
         calculate_reading_time=calculate_reading_time,
-        scroll_down=request.args.get("commented"),
+        scroll_down=request.args.get("commented") or edit_comment,
     )
 
 
