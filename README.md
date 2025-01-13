@@ -56,19 +56,19 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 
 ## Features
 
-- **Create, Edit, Delete Blog Posts:** Easily manage blog content with intuitive CRUD operations with database storage.
+- **Create, Edit, Draft, Delete Blog Posts:** Easily manage blog content with intuitive CRUD operations with database storage.
 - **Pagination:** View posts with pagination for better navigation and user experience.
 - **User-Friendly Text Editor:** A simple and intuitive editor for creating and editing blog posts provided by CKEditor 4.
 - **Responsive Design with Bootstrap:** The site automatically adjusts to various screen sizes and devices for seamless usability.
-- **Google Translate Support:** Allow posts to be translated from your writing language to other languages. To disable, set the `ENABLE_TRANSLATIONS=False` in `src/config.py`.
 - **Collaboration Support:** Give admin access to co-authors to collaborate on the blog.
 - **Secure, SEO Optimized, and Fast:** Optimized for performance and search engine visibility according to [Checkbot](https://checkbot.io/).
 - **Customizable About Page:** Personalize an "About" page for each author to share their story or expertise.
 - **User Management:** Basic functionality to manage users: registration, login, anonymous users, and admin management.
 - **Admin Privileges:** Assign co-authors the admin role to write, edit, delete their blog posts and all comments. You remain the Super Admin.
-- **Commenting System:** Users can now leave comments on posts, with moderation capabilities for the comment author and admins.
+- **Commenting System:** Users can publish and edit comments on posts, with moderation capabilities for the comment author and admins.
 - **Soft deletion with undo option**: Deleting posts and comments does not erase them entirely, but rather flag and hide them. 
-
+- **Filter by tag, author and year**: Posts can be filtered by tag, author and year to narrow down the results.
+- **RSS Support**: Auto-generated RSS feed, which users can subscribe to with their RSS-Reader to receive new posts comfortably.
 
 ## Limitations
 
@@ -112,7 +112,7 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 6. Set the required **environment variables** in a `.env` at the root directory. 
    ```
    SECRET_KEY=yoursecretkey
-   DB_URI=postgresql://username:password@ahost:port/db # https://supabase.com/ is free
+   DB_URI=postgresql://username:password@host:port/db # https://supabase.com/ is free
    ANONYMOUS_ID=1 # register the first user with username "anonymous" or similar for letting users comment anonymously
    SUPER_ID=2 # register yourself, set as admin in the database and define your ID in the `.env`
    ```
@@ -172,9 +172,10 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 - **Delete Comment**: `/<post_title>/delete/comment/<int:comment_id>` - Soft deletes a single comment.
 - **Restore Comment**: `/<post_title>/restore/comment/<int:comment_id>` - Restores/Unhides a single comment. 
 - **Show Author** - `/author/<author>` - View an author's page.
-- **Login**: `/login` - Login as a user or anonymously
-- **Register**: `/register` - Register a user
-- **Logout**: `/logout` - Logout a user
+- **Login**: `/login` - Login as a user or anonymously.
+- **Register**: `/register` - Register a user.
+- **Logout**: `/logout` - Logout a user.
+- **RSS**: `feed`/`/rss`/`/rss.xml` - Load blog feed users can subscribe to.
 
 ## Roles
 There are five types of users:
