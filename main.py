@@ -1,4 +1,5 @@
 from datetime import datetime as dt, date
+import json
 from flask import (
     Flask,
     Response,
@@ -22,11 +23,18 @@ from flask_login import (
     logout_user,
     login_required,
 )
-from functools import wraps
+from functools import partial, wraps
 from src.forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from src.utils import (
     add_author,
+    filter_posts_by_author,
+    filter_posts_by_tag,
+    filter_posts_by_year,
     find_post,
+    from_json,
+    get_tags_description,
+    get_unique_tags,
+    hide_drafts,
     parse_title,
     random_gravatar_url,
     calculate_reading_time,
@@ -81,6 +89,8 @@ SUPER_ID = int(
     os.getenv("SUPER_ID")
 )  # The super user's ID that can edit other admin's content and delete every comment
 
+app.jinja_env.filters.update(from_json=from_json)
+
 
 class Base(DeclarativeBase):
     pass
@@ -114,7 +124,10 @@ class Post(db.Model):
     edit_date: Mapped[str] = mapped_column(String(250), nullable=True)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
-    deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_draft: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    tags: Mapped[str] = mapped_column(String, default=json.dumps([]))
+
     # Relationships
     author: Mapped[str] = relationship("User", back_populates="posts")
     author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("user.id"))
@@ -195,10 +208,27 @@ def home():
         .scalars()
         .all()
     )
+    tag = request.args.get("tag")
+    year = request.args.get("year")
+    author = request.args.get("author")
+    filters = []
+    if tag:
+        filters.append(partial(filter_posts_by_tag, tag, current_user))
+    if year:
+        filters.append(partial(filter_posts_by_year, year))
+    if author:
+        filters.append(partial(filter_posts_by_author, author, User))
+    
+    filters.append(partial(hide_drafts, current_user, SUPER_ID))
+    
 
-    posts = add_author(result, User)
+    posts_set = set(result)
+    for filter_func in filters:
+        posts_set &= set(filter_func(result))
 
-    return render_template("index.html", all_posts=posts, page=page, max_page=max_page)
+    posts = add_author(list(posts_set), User)
+
+    return render_template("index.html", all_posts=posts, page=page, max_page=max_page, filter=[(tag, "tag"), (year, "year"), (author, "author")] if tag or year or author else [])
 
 
 @app.route("/<post_title>", methods=["GET", "POST"])
@@ -245,7 +275,11 @@ def show_post(post_title):
 @login_required
 @admin_required
 def new_post():
+    unique_tags = get_unique_tags(Post)
+
     form = CreatePostForm()
+    form.tags.description = get_tags_description(unique_tags)
+
     if form.validate_on_submit():
         new_post = Post(
             title=form.title.data,
@@ -254,6 +288,8 @@ def new_post():
             img_url=form.img_url.data,
             create_date=date.today().strftime("%B %d, %Y"),
             author_id=current_user.id,
+            is_draft=form.is_draft.data,
+            tags=json.dumps([tag.strip() for tag in form.tags.data.split(',')])  # Convert tags to JSON format
         )
         db.session.add(new_post)
         db.session.commit()
@@ -269,15 +305,21 @@ def edit_post(post_title):
     if not post:
         flash(f"No post found for title {post_title}!", "danger")
         return redirect(url_for("home"))
+    
+    unique_tags = get_unique_tags(Post)
+
     edit_form = CreatePostForm(
-        title=post.title, subtitle=post.subtitle, img_url=post.img_url, body=post.body
+        title=post.title, subtitle=post.subtitle, img_url=post.img_url, body=post.body, is_draft=post.is_draft, tags=', '.join((json.loads(post.tags)))
     )
+    edit_form.tags.description = get_tags_description(unique_tags)
     if edit_form.validate_on_submit():
         post.title = edit_form.title.data
         post.subtitle = edit_form.subtitle.data
         post.img_url = edit_form.img_url.data
         post.body = edit_form.body.data
         post.edit_date = date.today().strftime("%B %d, %Y")
+        post.is_draft = edit_form.is_draft.data
+        post.tags = json.dumps([tag.strip() for tag in edit_form.tags.data.split(',')])
         db.session.commit()
         return redirect(url_for("show_post", post_title=parse_title(post.title)))
     return render_template("make-post.html", form=edit_form, is_edit=True)

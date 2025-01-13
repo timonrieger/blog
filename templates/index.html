@@ -26,6 +26,24 @@
 <div class="container px-4 px-lg-5">
   <div class="row gx-4 gx-lg-5 justify-content-center">
     <div class="col-md-10 col-lg-8 col-xl-7">
+      {% if filter %}
+      <div>
+        <sup>
+          <a href="{{ url_for('home')}}" title="Clear">&#x2718;</a> 
+          Found {{ all_posts|length }} post{% if all_posts|length != 1 %}s{% endif %} for 
+           {% for filter in filter %}
+            {% if filter[0] %}
+              {% if filter[0] == 'draft' and current_user.admin %}
+                <span class="badge draft-badge">
+                {% else %}
+                <span class="badge default-badge">
+              {% endif %}
+              {{ filter[1] }}: {{ filter[0] }}</span>
+            {% endif %}
+          {% endfor %}
+        </sup>
+      </div>
+      {% endif %}
       <!-- Post preview-->
       {% for post in all_posts %}
       <div class="post-preview">
@@ -34,12 +52,31 @@
           <h3 class="post-subtitle">{{ post.subtitle }}</h3>
         </a>
         <p class="post-meta">
-          Posted by 
-          <a href="{{ url_for('show_author', author=post.author.username|lower|replace(' ', '-'))}}">{{ post.author.username }}</a>
-          on {{ post.create_date }}
-          {% if current_user.id == post.author.id or current_user.id == SUPER_ID %}
-            <a href="{{ url_for('delete_post', post_title=post.title|lower|replace(' ', '-')) }}" title="Soft Delete">&#x2718;</a>
-          {% endif %}
+          by
+          <a
+            href="{{ url_for('home', author=post.author.username, tag=request.args.get('tag'), year=request.args.get('year'))}}"
+            >{{ post.author.username }}</a
+          >
+          on {% set month_day,year = post.create_date.split(',') %}
+          <a href="{{ url_for('home', year=year.strip(), tag=request.args.get('tag'), author=request.args.get('author')) }}"
+            >{{ post.create_date }}</a
+          >
+          {% if current_user.id == post.author.id or current_user.id == SUPER_ID
+          %}
+          <a
+            href="{{ url_for('delete_post', post_title=post.title|lower|replace(' ', '-')) }}"
+            title="Soft Delete"
+            >&#x2718;</a
+          >
+          {% endif %} {% if post.is_draft %}<a
+            href="{{ url_for('home', tag='draft', year=request.args.get('year'), author=request.args.get('author'))}}"
+            ><span class="badge draft-badge">draft</span></a
+          >{% endif %} {% set tags_list = post.tags|from_json %} {% for tag in
+          tags_list %}
+          <a href="{{ url_for('home', tag=tag, year=request.args.get('year'), author=request.args.get('author'))}}"
+            ><span class="badge default-badge">{{ tag }}</span></a
+          >
+          {% endfor %}
         </p>
       </div>
       <!-- Divider-->

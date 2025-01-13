@@ -1017,6 +1017,27 @@ header.masthead .post-heading .meta a {
   margin:0;
 }
 
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 4px;
+  margin-left: 1em;
+}
+
+.draft-badge {
+  background-color: #f8d7da; /* same color as .alert-danger */
+  color: #842029; 
+  border: 1px solid #f5c2c7;
+}
+
+.default-badge {
+  color: var(--bs-gray-700); /* same color as .alert-success */
+  background-color: var(--bs-gray-300);
+  border: 1px solid var(--bs-gray-400);
+}
+
 .sub-text {
   color:#aaa;
   font-family:verdana;
