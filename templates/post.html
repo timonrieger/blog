@@ -1,7 +1,15 @@
 {% extends "layout.html" %} 
-{% block title %}{{ post.title }} &#124; Blog Boiler Pro{% endblock %}
-{% block description %}{{ post.title }} &#45; {{ post.subtitle }} &#45; by {{ post.author.username }}{%endblock %} 
+
+{% block title %}
+  {{ post.title }} &#124; Blog Boiler Pro
+{% endblock %}
+
+{% block description %}
+  {{ post.title }} &#45; {{ post.subtitle }} &#45; by {{ post.author.username }}
+{%endblock %} 
+
 {% from "bootstrap5/form.html" import render_form %} 
+
 {% block content %}
 <!-- Page Header-->
 <header class="masthead" style="background-image: url('{{post.img_url}}')">
@@ -20,7 +28,9 @@
             &#124; edited on {{ post.edit_date }}
             {% endif %}
             {% if DISPLAY_READING_TIME %}
-            &#124; {{ calculate_reading_time(post.body|safe) }} minutes
+            &#124; 
+              {% set reading_time = calculate_reading_time(post.body|safe) %}
+              {{ reading_time }} minute{% if reading_time != 1 %}s{% endif %}
             {% endif %}
           </span>
         </div>
@@ -54,7 +64,7 @@
         <!-- Comments Area -->
         {{ render_form(form) }}
         <div class="comment mb-5">
-          &gt; <a href="https://github.com/timonrieger/blog-boiler-pro/blob/main/.github/demo/comments.png">How to comment</a>
+          <sup>&gt; <a href="https://github.com/timonrieger/blog-boiler-pro/blob/main/.github/demo/comments.png">How to comment</a></sup>
           <ul class="commentList">
             {% for comment in comments %}
             <li>

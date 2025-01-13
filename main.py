@@ -68,8 +68,8 @@ login_manager.login_message = u"You need to login to use this feature. Use your 
 login_manager.login_view = "/login"
 login_manager.login_message_category = "danger"
 
-cache = Cache(config={"CACHE_TYPE": "SimpleCache"})
-cache.init_app(app)
+# cache = Cache(config={"CACHE_TYPE": "SimpleCache"})
+# cache.init_app(app)
 
 gravatar = Gravatar(
     app,
@@ -107,7 +107,7 @@ class User(db.Model, UserMixin):
     email: Mapped[str] = mapped_column(String(150), unique=True)
     password: Mapped[str] = mapped_column(String(150))
     username: Mapped[str] = mapped_column(String(150), unique=True)
-    admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # Relationships
     posts: Mapped[List["Post"]] = relationship("Post", back_populates="author")
     comments: Mapped[List["Comment"]] = relationship(
@@ -120,7 +120,7 @@ class Post(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
     subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
-    create_date: Mapped[str] = mapped_column(String(250), nullable=True)
+    create_date: Mapped[str] = mapped_column(String(250), nullable=False)
     edit_date: Mapped[str] = mapped_column(String(250), nullable=True)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
@@ -140,8 +140,8 @@ class Comment(db.Model):
     __tablename__ = "comment"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     text: Mapped[str] = mapped_column(String, nullable=False)
-    create_date: Mapped[str] = mapped_column(String, nullable=True)
-    deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    create_date: Mapped[str] = mapped_column(String, nullable=False)
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # Relationships
     author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("user.id"))
     comment_author: Mapped[str] = relationship("User", back_populates="comments")

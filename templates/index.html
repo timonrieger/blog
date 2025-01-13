@@ -1,10 +1,12 @@
-{% extends "layout.html" %}
+{% extends "layout.html" %} 
 
-{% block title %}Blog Boiler Pro built with Flask{% endblock %}
+{% block title %}
+  Blog Boiler Pro built with Flask
+{%endblock %}
 
 {% block description %}
-    Read my latest blog post on Blog Boiler Pro. Here I write about Ideas, Thoughts, Conclusions I'd like to share with you.
-{% endblock %}
+  Read my latest blog post on Blog Boiler Pro. Here I write about Ideas, Thoughts, Conclusions I'd like to share with you.
+{%endblock %} 
 
 {% block content %}
 <header
@@ -16,7 +18,9 @@
       <div class="col-md-10 col-lg-8 col-xl-7">
         <div class="site-heading">
           <h1>Blog Boiler Pro</h1>
-          <span class="subheading">Ideas, Thoughts and Conclusions I'd like to share with you.</span>
+          <span class="subheading"
+            >Ideas, Thoughts and Conclusions I'd like to share with you.</span
+          >
         </div>
       </div>
     </div>
@@ -47,7 +51,9 @@
       <!-- Post preview-->
       {% for post in all_posts %}
       <div class="post-preview">
-        <a href="{{ url_for('show_post', post_title=post.title|lower|replace(' ', '-')) }}">
+        <a
+          href="{{ url_for('show_post', post_title=post.title|lower|replace(' ', '-')) }}"
+        >
           <h2 class="post-title">{{ post.title }}</h2>
           <h3 class="post-subtitle">{{ post.subtitle }}</h3>
         </a>
@@ -84,13 +90,20 @@
       {% endfor %}
 
       <!-- Pager-->
-      <div class="d-flex justify-content-end mb-4" style="gap: 10px;">
-          {% if page > 1 %}
-            <a class="btn btn-secondary text-uppercase" href="{{ url_for('home', page=page - 1 ) }}">Newer Posts</a>
-          {% endif %}
-          {% if page < max_page %}
-            <a class="btn btn-secondary text-uppercase" href="{{ url_for('home', page=page + 1 ) }}">Older Posts</a>
-          {% endif %}
+      <div class="d-flex justify-content-end mb-4" style="gap: 10px">
+        {% if page > 1 %}
+        <a
+          class="btn btn-secondary text-uppercase"
+          href="{{ url_for('home', page=page - 1 ) }}"
+          >Newer Posts</a
+        >
+        {% endif %} {% if page < max_page %}
+        <a
+          class="btn btn-secondary text-uppercase"
+          href="{{ url_for('home', page=page + 1 ) }}"
+          >Older Posts</a
+        >
+        {% endif %}
       </div>
     </div>
   </div>
