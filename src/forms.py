@@ -13,7 +13,7 @@ class CreatePostForm(FlaskForm):
     body = CKEditorField("Blog Content", validators=[DataRequired()])
     tags = StringField("Tags (comma-separated)",validators=[Optional(), validate_tags_format])
     is_draft = BooleanField("Save as a draft?")
-    submit = SubmitField("Submit Post")
+    submit = SubmitField("Publish")
 
 
 class RegisterForm(FlaskForm):
@@ -31,4 +31,4 @@ class LoginForm(FlaskForm):
 
 class CommentForm(FlaskForm):
     comment = TextAreaField("Comment", validators=[DataRequired()])
-    submit = SubmitField("Submit Comment")
+    submit = SubmitField("Comment")

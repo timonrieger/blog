@@ -1056,9 +1056,44 @@ header.masthead .post-heading .meta a {
 
 #flash-container {
   position: fixed;
-  bottom: 1em;
-  right: 1em;
-  width: 30em;
+  bottom: 2vh;
+  right: 2vw;
+  width: 25vw;
+}
+
+@media (max-width: 1200px) {
+  #flash-container {
+    position: fixed;
+    width: 30vw;
+  }
+}
+
+@media (max-width: 992px) {
+  #flash-container {
+    position: fixed;
+    width: 35vw;
+  }
+}
+
+@media (max-width: 768px) {
+  #flash-container {
+    position: fixed;
+    width: 40vw;
+  }
+}
+
+@media (max-width: 576px) {
+  #flash-container {
+    position: fixed;
+    width: 45vw;
+  }
+}
+
+@media (max-width: 480px) {
+  #flash-container {
+    position: fixed;
+    width: 50vw;
+  }
 }
 
 .exit-btn {
@@ -1071,5 +1106,6 @@ header.masthead .post-heading .meta a {
 
 .flash {
   text-align: center;
-  margin: 2em;
+  margin-top: 1em;
+  margin-bottom: 1em;
 }

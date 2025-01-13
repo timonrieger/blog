@@ -220,7 +220,6 @@ def home():
         filters.append(partial(filter_posts_by_author, author, User))
     
     filters.append(partial(hide_drafts, current_user, SUPER_ID))
-    
 
     posts_set = set(result)
     for filter_func in filters:
@@ -341,6 +340,7 @@ def edit_post(post_title):
         post.is_draft = edit_form.is_draft.data
         post.tags = json.dumps([tag.strip() for tag in edit_form.tags.data.split(',')])
         db.session.commit()
+        flash("Post successfully updated!", "success")
         return redirect(url_for("show_post", post_title=parse_title(post.title)))
     return render_template("make-post.html", form=edit_form, is_edit=True)
 
