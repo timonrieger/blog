@@ -1,6 +1,8 @@
 from datetime import datetime as dt, date
+import json
 from flask import (
     Flask,
+    Response,
     abort,
     render_template,
     redirect,
@@ -21,12 +23,12 @@ from flask_login import (
     logout_user,
     login_required,
 )
-from functools import wraps
+from functools import partial, wraps
 from src.forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from jinja2.exceptions import TemplateNotFound
 from database import db, create_all, User as UserModel, BlogComment, BlogPost
-from src.utils import add_author, find_post, parse_title, random_gravatar_url, calculate_reading_time
-from src.config import LANGUAGE, ENABLE_TRANSLATIONS, DISPLAY_EDIT_DATE, DISPLAY_READING_TIME
+from src.utils import add_author, filter_posts_by_author, filter_posts_by_tag, filter_posts_by_year, find_post, from_json, get_tags_description, get_unique_tags, hide_drafts, parse_title, random_gravatar_url, calculate_reading_time
+from src.config import LANGUAGE, DISPLAY_EDIT_DATE, DISPLAY_READING_TIME
 import requests
 import dotenv
 import os
@@ -48,8 +50,8 @@ login_manager.login_message = u"You need to login to use this feature. Use your 
 login_manager.login_view = "/login"
 login_manager.login_message_category = "danger"
 
-cache = Cache(config={"CACHE_TYPE": "SimpleCache"})
-cache.init_app(app)
+# cache = Cache(config={"CACHE_TYPE": "SimpleCache"})
+# cache.init_app(app)
 
 gravatar = Gravatar(
     app,
@@ -74,9 +76,9 @@ ANONYMOUS_ID = int(os.getenv("ANONYMOUS_ID"))
 SUPER_ID = int(os.getenv("SUPER_ID"))
 
 class User(UserMixin, UserModel):
-    __mapper_args__ = {
-        'polymorphic_identity': 'user_',
-    }
+    pass
+
+app.jinja_env.filters.update(from_json=from_json)
 
 with app.app_context():
     create_all(app)
@@ -85,10 +87,10 @@ with app.app_context():
 @app.context_processor
 def global_vars():
     return dict(
+        current_url=request.url_root,
         SUPER_ID=SUPER_ID,
         ANONYMOUS_ID=ANONYMOUS_ID,
         LANGUAGE=LANGUAGE,
-        ENABLE_TRANSLATIONS=ENABLE_TRANSLATIONS,
         DISPLAY_EDIT_DATE=DISPLAY_EDIT_DATE,
         DISPLAY_READING_TIME=DISPLAY_READING_TIME,
     )
@@ -137,9 +139,26 @@ def home():
         .all()
     )
 
-    posts = add_author(result, User)
+    tag = request.args.get("tag")
+    year = request.args.get("year")
+    author = request.args.get("author")
+    filters = []
+    if tag:
+        filters.append(partial(filter_posts_by_tag, tag, current_user))
+    if year:
+        filters.append(partial(filter_posts_by_year, year))
+    if author:
+        filters.append(partial(filter_posts_by_author, author, User))
+    
+    filters.append(partial(hide_drafts, current_user, SUPER_ID))
 
-    return render_template("index.html", all_posts=posts, page=page, max_page=max_page)
+    posts_set = set(result)
+    for filter_func in filters:
+        posts_set &= set(filter_func(result))
+    print(posts_set)
+    posts = add_author(list(posts_set), User)
+
+    return render_template("index.html", all_posts=posts, page=page, max_page=max_page, filter=[(tag, "tag"), (year, "year"), (author, "author")] if tag or year or author else [])
 
 
 @app.route("/<post_title>", methods=["GET", "POST"])
@@ -155,21 +174,41 @@ def show_post(post_title):
         .all()
     )
     comments = add_author(result, User)[::-1]
-    comment_form = CommentForm()
-    if comment_form.validate_on_submit():
-        if current_user.is_authenticated:
-            time = dt.now().strftime("%b %d, %Y") + " at " + dt.now().strftime("%H:%M")
-            new_comment = BlogComment(
-                text=comment_form.comment.data,
-                parent_post=db.get_or_404(BlogPost, post.id),
-                author_id=current_user.id,
-                create_date=time,
-            )
-            db.session.add(new_comment)
-            db.session.commit()
+    edit_comment = request.args.get("edit_comment")
+    if edit_comment:
+        if not current_user.is_authenticated or current_user.id == ANONYMOUS_ID:
+            flash("As an anonymous user you cannot edit comments!", "danger")
             return redirect(url_for("show_post", post_title=post_title, commented=True))
-        else:
-            return login_manager.unauthorized()
+        comment = BlogComment.query.filter_by(id=edit_comment).first()
+        if not comment or comment.deleted:
+            abort(404)
+        if comment.author_id != current_user.id:
+            flash("You are not the author of the comment!", "danger") 
+            return redirect(url_for("show_post", post_title=post_title, commented=True))
+        comment_form = CommentForm(comment=comment.text)
+        if comment_form.validate_on_submit():
+            comment.text = comment_form.comment.data
+            db.session.commit()
+            flash("Commment successfully updated!", "success")
+            return redirect(url_for("show_post", post_title=post_title, commented=True))
+    
+    else:
+        comment_form = CommentForm()
+        if comment_form.validate_on_submit():
+            if current_user.is_authenticated:
+                time = dt.now().strftime("%b %d, %Y") + " at " + dt.now().strftime("%H:%M")
+                new_comment = BlogComment(
+                    text=comment_form.comment.data,
+                    parent_post=db.get_or_404(BlogPost, post.id),
+                    author_id=current_user.id,
+                    create_date=time,
+                )
+                db.session.add(new_comment)
+                db.session.commit()
+                flash("Commment successfully posted!", "success")
+                return redirect(url_for("show_post", post_title=post_title, commented=True))
+            else:
+                return login_manager.unauthorized()
 
     return render_template(
         "post.html",
@@ -178,7 +217,7 @@ def show_post(post_title):
         form=comment_form,
         anonymous_gravatar=random_gravatar_url,
         calculate_reading_time=calculate_reading_time,
-        scroll_down=request.args.get("commented"),
+        scroll_down=request.args.get("commented") or edit_comment,
     )
 
 
@@ -186,7 +225,11 @@ def show_post(post_title):
 @login_required
 @admin_required
 def new_post():
+    unique_tags = get_unique_tags(BlogPost)
+
     form = CreatePostForm()
+    form.tags.description = get_tags_description(unique_tags)
+
     if form.validate_on_submit():
         new_post = BlogPost(
             title=form.title.data,
@@ -195,6 +238,8 @@ def new_post():
             img_url=form.img_url.data,
             create_date=date.today().strftime("%B %d, %Y"),
             author_id=current_user.id,
+            is_draft=form.is_draft.data,
+            tags=json.dumps([tag.strip() for tag in form.tags.data.split(',')])  # Convert tags to JSON format
         )
         db.session.add(new_post)
         db.session.commit()
@@ -210,16 +255,23 @@ def edit_post(post_title):
     if not post:
         flash(f"No post found for title {post_title}!", "danger")
         return redirect(url_for("home"))
+    
+    unique_tags = get_unique_tags(BlogPost)
+
     edit_form = CreatePostForm(
-        title=post.title, subtitle=post.subtitle, img_url=post.img_url, body=post.body
+        title=post.title, subtitle=post.subtitle, img_url=post.img_url, body=post.body, is_draft=post.is_draft, tags=', '.join((json.loads(post.tags)))
     )
+    edit_form.tags.description = get_tags_description(unique_tags)
     if edit_form.validate_on_submit():
         post.title = edit_form.title.data
         post.subtitle = edit_form.subtitle.data
         post.img_url = edit_form.img_url.data
         post.body = edit_form.body.data
         post.edit_date = date.today().strftime("%B %d, %Y")
+        post.is_draft = edit_form.is_draft.data
+        post.tags = json.dumps([tag.strip() for tag in edit_form.tags.data.split(',')])
         db.session.commit()
+        flash("Post successfully updated!", "success")
         return redirect(url_for("show_post", post_title=parse_title(post.title)))
     return render_template("make-post.html", form=edit_form, is_edit=True)
 
@@ -267,7 +319,7 @@ def restore_post(post_title):
 @login_required
 def delete_comment(post_title, comment_id):
     comment = db.get_or_404(BlogComment, comment_id)
-    
+
     if current_user.id == ANONYMOUS_ID:
         flash("As an anonymous user you cannot delete comments!", "danger")
     elif current_user.id == comment.author_id or current_user.id == SUPER_ID:
@@ -289,7 +341,7 @@ def delete_comment(post_title, comment_id):
 @login_required
 def restore_comment(post_title, comment_id):
     comment = db.get_or_404(BlogComment, comment_id)
-    
+
     if current_user.id == comment.author_id or current_user.id == SUPER_ID:
         comment.deleted = False
         db.session.commit()
@@ -368,9 +420,63 @@ def logout():
     return redirect(url_for("home"))
 
 
+@app.route("/rss.xml")
+def rss_feed():
+
+    result = (
+        db.session.execute(
+            db.select(BlogPost)
+            .order_by(BlogPost.id.desc())
+            .where(BlogPost.deleted == False, BlogPost.is_draft == False)
+        )
+        .scalars()
+        .all()
+    )
+
+    posts = add_author(result, User)
+
+    # Generate RSS feed
+    rss_items = []
+    for post in posts:
+        post_date = dt.strptime(post.create_date, "%B %d, %Y")
+        rss_items.append(f"""
+        <item>
+            <title>{post.title}</title>
+            <guid isPermaLink="true">{ url_for('show_post', post_title=post.title.lower().replace(' ', '-'), _external=True) }</guid>
+            <description>{post.subtitle}</description>
+            <pubDate>{post_date.strftime('%a, %d %b %Y %H:%M:%S +0000')}</pubDate>
+            <dc:creator>{post.author.username}</dc:creator>
+        </item>
+        """)
+
+    rss_feed = f"""<?xml version="1.0" encoding="UTF-8" ?>
+    <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+        <channel>
+            <title>Blog Boiler Pro RSS Feed</title>
+            <link>{url_for('home', _external=True)}</link>
+            <atom:link href="{ url_for('rss_feed', _external=True) }" rel="self" type="application/rss+xml" />
+            <description>Latest posts from Blog Boiler Pro</description>
+            <language>en-us</language>
+            {''.join(rss_items)}
+        </channel>
+    </rss>
+    """
+
+    return Response(rss_feed, mimetype="application/rss+xml")
+
+
 @app.route("/robots.txt")
 def static_from_root():
     return send_from_directory(app.static_folder, request.path[1:])
+
+
+@app.route("/rss")
+def rss_redirect():
+    return redirect(url_for("rss_feed"))
+
+@app.route("/feed")
+def feed_redirect():
+    return redirect(url_for("rss_feed"))
 
 
 @app.errorhandler(404)
@@ -384,9 +490,9 @@ def add_header(response):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Cache-Control"] = "max-age=86400"
+    #response.headers["Cache-Control"] = "max-age=86400"
     return response
 
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=False, port=5007)

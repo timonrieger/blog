@@ -36,4 +36,24 @@
   </div>
 </main>
 
+<script async>
+  document.addEventListener('DOMContentLoaded', function() {
+      const draftCheckbox = document.getElementById('is_draft');
+      
+      function updateDraftColor() {
+          if (draftCheckbox.checked) {
+              draftCheckbox.style.backgroundColor = '#0085A1';
+          } else {
+              draftCheckbox.style.backgroundColor = 'white';
+          }
+      }
+
+      updateDraftColor();
+
+      draftCheckbox.addEventListener('change', function() {
+          updateDraftColor();
+      });
+  });
+</script>
+
 {% endblock %}

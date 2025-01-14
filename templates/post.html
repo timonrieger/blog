@@ -1,7 +1,16 @@
 {% extends "layout.html" %} 
-{% block title %}{{ post.title }} &#124; Brain Snippets{% endblock %}
-{% block description %}{{ post.title }} &#45; {{ post.subtitle }} &#45; by {{ post.author.username }}{%endblock %} 
+
+{% block title %}
+  {{ post.title }} &#124; Brain Snippets
+
+  {% endblock %}
+
+{% block description %}
+  {{ post.title }} &#45; {{ post.subtitle }} &#45; by {{ post.author.username }}
+{%endblock %} 
+
 {% from "bootstrap5/form.html" import render_form %} 
+
 {% block content %}
 <!-- Page Header-->
 <header class="masthead" style="background-image: url('{{post.img_url}}')">
@@ -14,13 +23,15 @@
           <hr>
           <span class="meta">
             by 
-            <span translate="no"><a href="{{ url_for('show_author')}}">{{ post.author.username }}</a></span>
+            <a href="{{ url_for('show_author', author=post.author.username|lower|replace(' ', '-'))}}">{{ post.author.username }}</a>
             on {{ post.create_date }}
             {% if post.edit_date and DISPLAY_EDIT_DATE %} 
             &#124; edited on {{ post.edit_date }}
             {% endif %}
             {% if DISPLAY_READING_TIME %}
-            &#124; {{ calculate_reading_time(post.body|safe) }} minutes
+            &#124; 
+              {% set reading_time = calculate_reading_time(post.body|safe) %}
+              {{ reading_time }} minute{% if reading_time != 1 %}s{% endif %}
             {% endif %}
           </span>
         </div>
@@ -35,9 +46,6 @@
     <div class="row gx-4 gx-lg-5 justify-content-center">
       <div class="col-md-10 col-lg-8 col-xl-7">
         <div class="post-toolbar">
-          {% if ENABLE_TRANSLATIONS %}
-              <div id="google_translate_element"></div>
-          {% endif %}
           {% if current_user.id == post.author.id or current_user.id == SUPER_ID %}
           <div class="d-flex justify-content-end mb-4">
             <a
@@ -54,7 +62,7 @@
         <!-- Comments Area -->
         {{ render_form(form) }}
         <div class="comment mb-5">
-          &gt; <a href="https://github.com/timonrieger/blog-boiler-pro/blob/main/.github/demo/comments.png">How to comment</a>
+          <sup>&gt; <a href="https://github.com/timonrieger/blog-boiler-pro/blob/main/.github/demo/comments.png">How to comment</a></sup>
           <ul class="commentList">
             {% for comment in comments %}
             <li>
@@ -73,15 +81,24 @@
               <div class="commentText">
                 <span class="date sub-text"
                   >
-                  <span translate="no">{{ comment.author.username }}</span>{% if comment.author.admin %} &#10004;{% endif %}
+                  {{ comment.author.username }}
+                  {% if comment.author.admin %}&#10004;{% endif %}
                   &#124; {{ comment.create_date }} 
                   
-                  {% if current_user.id != ANONYMOUS_ID and (current_user.id == comment.author_id or current_user.id == SUPER_ID) %}
-                  <a
-                    href="{{url_for('delete_comment', post_title=post.title|lower|replace(' ', '-'), comment_id=comment.id) }}"
-                    title="Soft Delete"
-                    >&#x2718;</a
-                  >
+                  {% if current_user.id != ANONYMOUS_ID and current_user.id == comment.author_id %}
+                    &#124;
+                    <a
+                      href="{{url_for('show_post', post_title=post.title|lower|replace(' ', '-'), edit_comment=comment.id) }}"
+                      title="Edit comment"
+                      >&#9998;</a
+                    >
+                      {% if current_user.id == SUPER_ID %}
+                        <a
+                          href="{{url_for('delete_comment', post_title=post.title|lower|replace(' ', '-'), comment_id=comment.id) }}"
+                          title="Soft Delete"
+                          >&#x2718;</a
+                        >
+                      {% endif %}
                   {% endif %}
                 </span>
                 <p>{{ comment.text|safe }}</p>
@@ -102,13 +119,5 @@
   };
 </script>
 {% endif %}
-
-<script type="text/javascript">
-  function googleTranslateElementInit() {
-    new google.translate.TranslateElement({pageLanguage: 'en'}, 'google_translate_element');
-  }
-</script>
-<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
 
 {% endblock %}

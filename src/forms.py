@@ -1,7 +1,9 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, TextAreaField
-from wtforms.validators import DataRequired
+from wtforms import StringField, SubmitField, TextAreaField, BooleanField, SelectMultipleField
+from wtforms.validators import DataRequired, Optional
 from flask_ckeditor import CKEditorField
+from src.config import DRAFT_ON_DEFAULT
+from src.utils import validate_tags_format
 
 
 class CreatePostForm(FlaskForm):
@@ -9,7 +11,9 @@ class CreatePostForm(FlaskForm):
     subtitle = StringField("Subtitle", validators=[DataRequired()])
     img_url = StringField("Blog Image URL", validators=[DataRequired()])
     body = CKEditorField("Blog Content", validators=[DataRequired()])
-    submit = SubmitField("Submit Post")
+    tags = StringField("Tags (comma-separated)",validators=[Optional(), validate_tags_format])
+    is_draft = BooleanField("Save as a draft?")
+    submit = SubmitField("Publish")
 
 
 class RegisterForm(FlaskForm):
@@ -27,4 +31,4 @@ class LoginForm(FlaskForm):
 
 class CommentForm(FlaskForm):
     comment = TextAreaField("Comment", validators=[DataRequired()])
-    submit = SubmitField("Submit Comment")
+    submit = SubmitField("Comment")

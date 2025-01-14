@@ -1,3 +1,5 @@
+from collections import Counter
+import json
 import os
 import hashlib
 from werkzeug.exceptions import NotFound
@@ -9,26 +11,26 @@ def parse_title(raw_title):
 
 
 def find_post(title, post_model, user_model):
-  '''Uses a lower case title combined with hyphens and returns the corresponding BlogPost object in the database'''
-  all_posts = post_model.query.all()
-  post_list = [item for item in all_posts if parse_title(item.title) == title]
-  if not post_list:
-     raise NotFound()
-  post = post_list[0]
-  post.author = user_model.query.filter_by(id=post.author_id).first()
-  return post
+    """Uses a lower case title combined with hyphens and returns the corresponding Post object in the database"""
+    all_posts = post_model.query.all()
+    post_list = [item for item in all_posts if parse_title(item.title) == title]
+    if not post_list:
+        raise NotFound()
+    post = post_list[0]
+    post.author = user_model.query.filter_by(id=post.author_id).first()
+    return post
 
 
 def add_author(list, user_model):
-  '''Maps the author id to the User object and attaches the username to each item in the list (BlogPost or BlogComment)'''
-  authors = [post.author_id for post in list]
-  usernames = user_model.query.filter(user_model.id.in_(authors)).all()
-  user_dict = {user.id: user for user in usernames}
-  list_with_authors = []
-  for item in list:
-      item.author = user_dict.get(item.author_id, "")
-      list_with_authors.append(item)
-  return list_with_authors
+    """Maps the author id to the User object and attaches the username to each item in the list (Post or BlogComment)"""
+    authors = [post.author_id for post in list]
+    usernames = user_model.query.filter(user_model.id.in_(authors)).all()
+    user_dict = {user.id: user for user in usernames}
+    list_with_authors = []
+    for item in list:
+        item.author = user_dict.get(item.author_id, "")
+        list_with_authors.append(item)
+    return list_with_authors
 
 
 def random_gravatar_url(size=80):
@@ -45,3 +47,63 @@ def calculate_reading_time(text, words_per_minute=200):
     reading_time_minutes = total_words / words_per_minute
     minutes = int(reading_time_minutes)
     return minutes
+
+
+def from_json(json_string):
+    '''Deserialize (a str, bytes or bytearray instance containing a JSON document) to a Python object. Used as and '''
+    return json.loads(json_string)
+
+
+def validate_tags_format(form, tags):
+    """
+    Validates that the tags are comma-separated and do not include any whitespaces.
+    
+    :param tags: A string containing comma-separated tags
+    :return: A list of valid tags if the format is correct, otherwise raises a ValueError
+    """
+    tags_list = [tag.strip() for tag in form.tags.data.split(',')]
+    
+    # Check for empty tags (e.g., "tag1, , tag3")
+    if any(not tag for tag in tags_list):
+        raise ValueError("Tags must be separated by commas and cannot be empty.")
+    
+    return tags_list
+
+def get_tags_description(tags):
+    '''Add description to tag field.'''
+    return ', '.join(tags)
+
+
+def get_unique_tags(post_model):
+    '''Sorted tags by occurence.'''
+    all_tags = [json.loads(post.tags) for post in post_model.query.all()]
+    unique_tags = set(tag for tags in all_tags for tag in tags)
+    tag_counts = Counter(tag for tags in all_tags for tag in tags)
+    return sorted(unique_tags, key=lambda tag: tag_counts[tag], reverse=True)
+
+
+def filter_posts_by_tag(tag, current_user, posts):
+    '''Filter by tag and draft posts if the user is an admin'''
+    if tag.lower() == "draft" and current_user.is_authenticated and current_user.admin:
+        return [post for post in posts if post.is_draft]
+    else:
+        return [post for post in posts if tag in json.loads(post.tags)]
+
+
+def filter_posts_by_year(year, posts):
+    '''Filter by the year the post was created.'''
+    return [post for post in posts if year in post.create_date]
+
+
+def hide_drafts(current_user, SUPER_ID, posts):
+    '''Filter out drafts if the user is not the author or the super admin'''
+    if current_user.is_authenticated:
+        return [post for post in posts if not post.is_draft or (post.is_draft and post.author_id == current_user.id) or current_user.id == SUPER_ID]
+    else:
+        return [post for post in posts if not post.is_draft]
+
+
+def filter_posts_by_author(author, user_model, posts):
+    '''Filter by the post author.'''
+    author_id = user_model.query.filter_by(username=author).first().id
+    return [post for post in posts if author_id == post.author_id]
