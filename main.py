@@ -1,4 +1,4 @@
-from datetime import datetime as dt, date
+from datetime import datetime as dt
 import hashlib
 import json
 from flask import (
@@ -41,6 +41,9 @@ from src.utils import (
     calculate_reading_time,
 )
 from src.config import (
+    BLOG_NAME,
+    BLOG_TITLE,
+    BLOG_DESCRIPTION,
     DATE_FORMAT,
     DATE_FORMAT_LONG,
     LANGUAGE,
@@ -48,6 +51,7 @@ from src.config import (
     DISPLAY_READING_TIME,
 )
 from jinja2.exceptions import TemplateNotFound
+from jinja2.ext import i18n
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
 from sqlalchemy import Integer, String, Text, Boolean, DateTime, func
@@ -92,7 +96,7 @@ SUPER_ID = int(
 )  # The super user's ID that can edit other admin's content and delete every comment
 
 app.jinja_env.filters.update(from_json=from_json)
-
+app.jinja_env.add_extension('jinja2.ext.i18n')
 
 class Base(DeclarativeBase):
     pass
@@ -160,6 +164,9 @@ def global_vars():
         DISPLAY_READING_TIME=DISPLAY_READING_TIME,
         DATE_FORMAT=DATE_FORMAT,
         DATE_FORMAT_LONG=DATE_FORMAT_LONG,
+        BLOG_NAME=BLOG_NAME,
+        BLOG_TITLE=BLOG_TITLE,
+        BLOG_DESCRIPTION=BLOG_DESCRIPTION,
     )
 
 
@@ -318,8 +325,7 @@ def new_post():
 def edit_post(post_title):
     post = find_post(post_title, BlogPost, User)
     if not post:
-        flash(f"No post found for title {post_title}!", "danger")
-        return redirect(url_for("home"))
+        abort(404)
     
     unique_tags = get_unique_tags(BlogPost)
 
@@ -346,8 +352,7 @@ def edit_post(post_title):
 def delete_post(post_title):
     post = find_post(post_title, BlogPost, User)
     if not post:
-        flash(f"No post found for title {post_title}!", "danger")
-        return redirect(url_for("home"))
+        abort(404)
     if current_user.id == ANONYMOUS_ID:
         flash(gettext(u"As an anonymous user you cannot delete posts!"), "danger")
     elif current_user.id == post.author_id or current_user.id == SUPER_ID:
