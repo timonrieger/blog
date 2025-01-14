@@ -15,7 +15,7 @@ from flask import (
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
 from flask_gravatar import Gravatar
-from flask_babel import Babel
+from flask_babel import Babel, gettext, lazy_gettext
 from flask_login import (
     UserMixin,
     login_user,
@@ -64,11 +64,12 @@ app.secret_key = os.getenv("SECRET_KEY")
 ckeditor = CKEditor(app)
 Bootstrap5(app)
 
-babel = Babel(app)
+babel = Babel()
+babel.init_app(app, default_locale="de")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_message = u"You need to login to use this feature. Use your own account or login anonymously!"
+login_manager.login_message = lazy_gettext(u"You need to login to use this feature. Use your own or the anonymous account!")
 login_manager.login_view = "/login"
 login_manager.login_message_category = "danger"
 
@@ -173,7 +174,7 @@ def admin_required(f):
         user = User.query.filter_by(id=current_user.id).first()
         if not user.admin:
             flash(
-                "You do not have the necessary permissions to use this feature. Admin access is required!",
+                gettext(u"You do not have the necessary permissions to use this feature. Admin access is required!"),
                 "danger",
             )
             return redirect(url_for("home"))
@@ -243,20 +244,20 @@ def show_post(post_title):
     edit_comment = request.args.get("edit_comment")
     if edit_comment:
         if not current_user.is_authenticated or current_user.id == ANONYMOUS_ID:
-            flash("As an anonymous user you cannot edit comments!", "danger")
+            flash(gettext(u"As an anonymous user you cannot edit comments!", "danger"))
             return redirect(url_for("show_post", post_title=post_title, commented=True))
         comment = BlogComment.query.filter_by(id=edit_comment).first()
         if not comment or comment.deleted:
             abort(404)
         if comment.author_id != current_user.id:
-            flash("You are not the author of the comment!", "danger") 
+            flash(gettext(u"You are not the author of the comment!"), "danger") 
             return redirect(url_for("show_post", post_title=post_title, commented=True))
         comment_form = CommentForm(comment=comment.text)
         if comment_form.validate_on_submit():
             comment.text = comment_form.comment.data
             comment.edited = True
             db.session.commit()
-            flash("Commment successfully updated!", "success")
+            flash(gettext(u"Commment successfully updated!"), "success")
             return redirect(url_for("show_post", post_title=post_title, commented=True))
     
     else:
@@ -270,7 +271,7 @@ def show_post(post_title):
                 )
                 db.session.add(new_comment)
                 db.session.commit()
-                flash("Commment successfully posted!", "success")
+                flash(gettext(u"Commment successfully posted!"), "success")
                 return redirect(url_for("show_post", post_title=post_title, commented=True))
             else:
                 return login_manager.unauthorized()
@@ -334,7 +335,7 @@ def edit_post(post_title):
         post.is_draft = edit_form.is_draft.data
         post.tags=json.dumps([tag.strip() for tag in edit_form.tags.data.split(',')] if not "" else [])
         db.session.commit()
-        flash("Post successfully updated!", "success")
+        flash(gettext(u"Post successfully updated!"), "success")
         return redirect(url_for("show_post", post_title=parse_title(post.title)))
     return render_template("make-post.html", form=edit_form, is_edit=True)
 
@@ -348,14 +349,12 @@ def delete_post(post_title):
         flash(f"No post found for title {post_title}!", "danger")
         return redirect(url_for("home"))
     if current_user.id == ANONYMOUS_ID:
-        flash("As an anonymous user you cannot delete posts!", "danger")
+        flash(gettext(u"As an anonymous user you cannot delete posts!"), "danger")
     elif current_user.id == post.author_id or current_user.id == SUPER_ID:
         post.deleted = True
         db.session.commit()
         flash(
-            "Successfully deleted the post! <a href='/{}/restore'>Undo</a>".format(
-                post_title
-            ),
+            f"{gettext(u'Successfully deleted the post!')} <a href='/{post_title}/restore'>{gettext(u'Undo')}</a>",
             "success",
         )
     else:
@@ -367,14 +366,14 @@ def delete_post(post_title):
 def restore_post(post_title):
     post = find_post(post_title, BlogPost, User)
     if current_user.id == ANONYMOUS_ID:
-        flash("As an anonymous user you cannot restore comments!", "danger")
+        flash(gettext(u"As an anonymous user you cannot restore comments!"), "danger")
     if current_user.id == post.author_id or current_user.id == SUPER_ID:
         post.deleted = False
         db.session.commit()
-        flash("Post successfully restored!", "success")
+        flash(gettext(u"Post successfully restored!"), "success")
         return redirect(url_for("show_post", post_title=post_title))
     else:
-        flash("You are not the author of the post!", "danger")
+        flash(gettext(u"You are not the author of the post!"), "danger")
         return redirect(url_for("home"))
 
 
@@ -384,18 +383,16 @@ def delete_comment(post_title, comment_id):
     comment = db.get_or_404(BlogComment, comment_id)
 
     if current_user.id == ANONYMOUS_ID:
-        flash("As an anonymous user you cannot delete comments!", "danger")
+        flash(gettext(u"As an anonymous user you cannot delete comments!"), "danger")
     elif current_user.id == comment.author_id or current_user.id == SUPER_ID:
         comment.deleted = True
         db.session.commit()
         flash(
-            "Successfully deleted the comment! <a href='/{}/restore/comment/{}'>Undo</a>".format(
-                post_title, comment_id
-            ),
+            f"{gettext(u'Successfully deleted the comment!')} <a href='/{post_title}/restore/comment/{comment_id}'>{gettext(u'Undo')}</a>",
             "success",
         )
     else:
-        flash("You are not the author of the comment!", "danger")
+        flash(gettext(u"You are not the author of the comment!"), "danger")
 
     return redirect(url_for("show_post", post_title=post_title, commented=True))
 
@@ -408,10 +405,10 @@ def restore_comment(post_title, comment_id):
     if current_user.id == comment.author_id or current_user.id == SUPER_ID:
         comment.deleted = False
         db.session.commit()
-        flash("Comment successfully restored!", "success")
+        flash(gettext(u"Comment successfully restored!"), "success")
         return redirect(url_for("show_post", post_title=post_title, commented=True))
     else:
-        flash("You are not the author of the comment!", "danger")
+        flash(gettext(u"You are not the author of the comment!"), "danger")
         return redirect(url_for("show_post", post_title=post_title))
 
 
@@ -433,22 +430,22 @@ def login():
         password = form.password.data
         user = User.query.filter_by(email=email).first()
         if not user:
-            flash("No account found. Register first!", "danger")
+            flash(gettext(u"No account found. Register first!"), "danger")
             return redirect(url_for("register"))
         if check_password_hash(user.password, password):
             login_user(user)
-            flash(f"Login successful, {user.username}!", "success")
+            flash(gettext(u"Login successful, %(username)s!", username=user.username), "success")
             if redirect_to:
                 return redirect(redirect_to)
             return redirect(url_for("home"))
         else:
-            flash("Invalid credentials!")
+            flash(gettext(u"Invalid credentials!"))
 
     if request.args.get("u") == str(ANONYMOUS_ID):
         user = User.query.filter_by(id=ANONYMOUS_ID).first()
         login_user(user)
         flash(
-            f"Logged in as an anonymous user. Start commenting anonymously!", "success"
+            gettext(u"Logged in as an anonymous user. Start commenting anonymously!"), "success"
         )
         if redirect_to:
             return redirect(redirect_to)
@@ -467,7 +464,7 @@ def register():
         username = form.username.data
         user = User.query.filter_by(email=email).first()
         if user:
-            flash("Already registered! Login instead.", "danger")
+            flash(gettext(u"Already registered! Login instead."), "danger")
             return redirect(url_for("login"))
 
         hashed_password = generate_password_hash(password, "pbkdf2:sha256", 8)
@@ -479,7 +476,8 @@ def register():
             )
             db.session.add(new_user)
             db.session.commit()
-            flash(f"Registration and login successful, {new_user.username}!", "success")
+            flash(gettext(u"Registration and login successful, %(username)s!", username=new_user.username), "success")
+
             login_user(new_user)
             return redirect(url_for("home"))
 
@@ -490,7 +488,8 @@ def register():
 def logout():
     username = current_user.username
     logout_user()
-    flash(f"Logged out. See you soon, {username}!", "success")
+    flash(gettext(u"Logout successful, %(username)s!", username=username), "success")
+
     return redirect(url_for("home"))
 
 
@@ -526,10 +525,10 @@ def rss_feed():
     rss_feed = f"""<?xml version="1.0" encoding="UTF-8" ?>
     <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
         <channel>
-            <title>Blog Boiler Pro RSS Feed</title>
+            <title>Blog Boiler Pro</title>
             <link>{url_for('home', _external=True)}</link>
             <atom:link href="{ url_for('rss_feed', _external=True) }" rel="self" type="application/rss+xml" />
-            <description>Latest posts from Blog Boiler Pro</description>
+            <description>{BLOG_DESCRIPTION}</description>
             <language>en-us</language>
             {''.join(rss_items)}
         </channel>

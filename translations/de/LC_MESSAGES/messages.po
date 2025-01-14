@@ -1,0 +1,125 @@
+# German translations for Flask Boiler Pro.
+# Copyright (C) 2025 Timon Rieger
+# This file is distributed under the same license as the project.
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-01-14 16:46+0100\n"
+"PO-Revision-Date: 2025-01-14 15:55+0100\n"
+"Language: de\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: main.py:75
+msgid ""
+"You need to login to use this feature. Use your own or the anonymous account!"
+msgstr ""
+"Melde dich an, um diese Funktion nutzen zu können. Verwende deinen eigenen oder den anonymen Account!"
+
+#: main.py:181
+msgid ""
+"You do not have the necessary permissions to use this feature. Admin "
+"access is required!"
+msgstr ""
+"Du hast nicht die erforderlichen Berechtigungen, um diese Funktion zu "
+"nutzen. Administratorzugriff ist erforderlich!"
+
+#: main.py:252
+msgid "As an anonymous user you cannot edit comments!"
+msgstr "Als anonymer Benutzer kannst keine Kommentare bearbeiten!"
+
+#: main.py:258 main.py:398 main.py:414
+msgid "You are not the author of the comment!"
+msgstr "Du bist nicht der Autor des Kommentars!"
+
+#: main.py:265
+msgid "Commment successfully updated!"
+msgstr "Kommentar erfolgreich aktualisiert!"
+
+#: main.py:279
+msgid "Commment successfully posted!"
+msgstr "Kommentar erfolgreich veröffentlicht!"
+
+#: main.py:342
+msgid "Post successfully updated!"
+msgstr "Beitrag erfolgreich aktualisiert!"
+
+#: main.py:355
+msgid "As an anonymous user you cannot delete posts!"
+msgstr "Als anonymer Benutzer kannst du keine Beiträge löschen!"
+
+#: main.py:360
+msgid "Successfully deleted the post!"
+msgstr "Beitrag erfolgreich gelöscht!"
+
+#: main.py:360 main.py:394
+msgid "Undo"
+msgstr "Rückgängig"
+
+#: main.py:372
+msgid "As an anonymous user you cannot restore comments!"
+msgstr "Als anonymer Benutzer kannst du keine Kommentare wiederherstellen!"
+
+#: main.py:376
+msgid "Post successfully restored!"
+msgstr "Beitrag erfolgreich wiederhergestellt!"
+
+#: main.py:379
+msgid "You are not the author of the post!"
+msgstr "Du bist nicht der Autor des Beitrags!"
+
+#: main.py:389
+msgid "As an anonymous user you cannot delete comments!"
+msgstr "Als anonymer Benutzer kannst du keine Kommentare löschen!"
+
+#: main.py:394
+msgid "Successfully deleted the comment!"
+msgstr "Kommentar erfolgreich gelöscht!"
+
+#: main.py:411
+msgid "Comment successfully restored!"
+msgstr "Kommentar erfolgreich wiederhergestellt!"
+
+#: main.py:436
+msgid "No account found. Register first!"
+msgstr "Kein Konto gefunden. Registriere dich zuerst!"
+
+#: main.py:440
+#, python-format
+msgid "Login successful, %(username)s!"
+msgstr "Anmeldung erfolgreich, %(username)s!"
+
+#: main.py:445
+msgid "Invalid credentials!"
+msgstr "Ungültige Anmeldedaten!"
+
+#: main.py:451
+msgid "Logged in as an anonymous user. Start commenting anonymously!"
+msgstr "Angemeldet als anonymer Benutzer. Beginne, anonym zu kommentieren!"
+
+#: main.py:470
+msgid "Already registered! Login instead."
+msgstr "Bereits registriert! Melde dich stattdessen an."
+
+#: main.py:482
+#, python-format
+msgid "Registration and login successful, %(username)s!"
+msgstr "Registrierung und Anmeldung erfolgreich, %(username)s!"
+
+#: main.py:494
+#, python-format
+msgid "Logout successful, %(username)s!"
+msgstr "Abmeldung erfolgreich, %(username)s!"
+
+#~ msgid ""
+#~ "You need to login to use this "
+#~ "feature. Use your own account or "
+#~ "login anonymously!"
+#~ msgstr ""
+#~ "Du musst dich anmelden, um diese "
+#~ "Funktion zu nutzen. Nutze dein "
+#~ "eigenes Konto oder melde dich "
+#~ "anonym an!"
+
