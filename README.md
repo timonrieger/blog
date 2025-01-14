@@ -113,7 +113,7 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 6. Set the required **environment variables** in a `.env` at the root directory. 
    ```
    SECRET_KEY=yoursecretkey
-   DB_URI=postgresql://username:password@host:port/db # https://supabase.com/ is free
+   DB_URI=postgresql://username:password@host:port/db
    ANONYMOUS_ID=1 # register the first user with username "anonymous" or similar for letting users comment anonymously
    SUPER_ID=2 # register yourself, set as admin in the database and define your ID in the `.env`
    ```
@@ -162,6 +162,79 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 4. **Edit author pages**  
    Edit the contents in the author files in `templates/authors/`. Change the name of the file to the username you registered as well as the profile picture in `static/assets/img/`, e.g. John Doe > `john-doe.html` and `john-doe.jpg`
 
+5. **Update the `src/config.py` configuration file
+   - `LANGUAGE`: Your blog should be in a different language than English? <a href="#multi-language-support">start here</a>
+   - `DISPLAY_READING_TIME`: Show the approximate reading time on each post (True/False).
+   - `DISPLAY_EDIT_DATE`: Show the edit date if you edited the post in some way (True/False).
+   - `DRAFT_ON_DEFAULT`: Sets the checkbox to publish as draft in the post form on default (True/False).
+   - `DATE_FORMAT`: The format for dates (used everywhere except comments).
+   - `DATE_FORMAT_LONG`: The format for dates (used in comments)
+
+      => [Datetime Format Guide](https://www.pythonmorsels.com/strptime/)
+   - `BLOG_NAME`: The name of your blog
+   - `BLOG_TITLE`: The title that shows up on search machines for the home page
+   - `BLOG_DESCRIPTION`: The description that shows up on search machines for the home page
+
+
+
+## Multi-Language Support
+
+The blog is currently only available in English, but I am working on a  German version.
+If you want to contribute a language you are native in, feel free to open a PR that contains the translated `message.po` mapping for the language.
+
+If you don't want to help translating but rather use a different language, <a href="#compile-the-language">start here</a>
+
+If you want to help translate, just follow from here on.
+
+Navigate to the project root.
+
+### Get all languages available
+>Note: may be not fully translated
+```bash
+find translations -mindepth 1 -maxdepth 1 -type d
+```
+
+### Get all strings for translation
+Extracts all translateable strings from the `.html` and `.py` files into `message.pot`.
+```bash
+pybabel extract -F babel.cfg -o translations/messages.pot .
+```
+
+### a) Initialize a language (ONLY ONCE)
+```bash
+pybabel init -i translations/messages.pot -d translations -l LANG_LOCAL
+```
+
+### b) Update a language
+```bash
+pybabel update -i translations/messages.pot -d translations
+```
+
+### Translate 
+We have to translate manually, but you can start out with [Deepl in VSCode](https://marketplace.visualstudio.com/items?itemName=soerenuhrbach.vscode-deepl). We use common not highly formal language.
+
+Fill the `msgstr ""` in the `LANG_LOCAL/LC_MESSAGES/messages.po` with the translation. Check existing languages if you're lost.
+
+### Compile the language
+Compiles all languages for usage.
+```bash
+pybabel compile -f -d translations
+```
+
+### Apply and reload
+In `src/config.py` change `LANGUAGE` to the language locale you want, then run:
+```bash
+python -m main
+```
+
+## Roles
+There are five types of users:
+- Non logged in users: `read` access
+- Anonymous user: as above + `write:comment`
+- Logged in users: as above + `delete:own_comment`
+- Admin user: as above + `write:post`, `edit:own_post`, `delete:own_post`
+- Super admin (only one, YOU): full access (can delete, edit, write anything)
+
 ## Endpoints
 
 - **Home**: `/` - View all blog posts.
@@ -178,33 +251,12 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 - **Logout**: `/logout` - Logout a user.
 - **RSS**: `/feed`, `/rss` and `/rss.xml` - Load blog feed users can subscribe to.
 
-## Roles
-There are five types of users:
-- Non logged in users: `read` access
-- Anonymous user: as above + `write:comment`
-- Logged in users: as above + `delete:own_comment`
-- Admin user: as above + `write:post`, `edit:own_post`, `delete:own_post`
-- Super admin (only one, YOU): full access (can delete, edit, write anything)
-
 ## Requirements
 
 - Python 3.x
-- The following Python packages (as listed in `requirements.txt`):
-   - Bootstrap_Flask==2.2.0
-   - Flask_CKEditor==1.0.0
-   - Flask_Login==0.6.3
-   - Flask-Gravatar==0.5.0
-   - Flask_WTF==1.2.1
-   - Werkzeug==3.0.0
-   - WTForms==3.0.1
-   - Flask==2.3.2
-   - flask_sqlalchemy==3.1.1
-   - SQLAlchemy==2.0.25
-   - requests==2.31.0
-   - python-dotenv==0.19.1
-   - gunicorn==20.0.0
-   - psycopg2-binary==2.9.10
-
+- The following Python packages (as listed in `requirements.txt`)
+- A hosting service to deploy your blog to ([Vercel](https://vercel.com/), [Render](https://render.com/) etc.)
+- A database ([Supabase](https://supabase.com/) is free)
 
 ## License
 
