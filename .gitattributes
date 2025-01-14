@@ -1,0 +1,10 @@
+static/uploads/1.png merge=ours
+static/uploads/2.png merge=ours
+static/uploads/3.png merge=ours
+static/uploads/4.png merge=ours
+static/assets/favicon.ico merge=ours
+static/assets/img/404.jpg merge=ours
+static/assets/img/login-bg.jpg merge=ours
+static/assets/img/register-bg.jpg merge=ours
+requirements.txt merge=ours
+README.md merge=ours
