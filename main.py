@@ -138,7 +138,6 @@ def home():
         .scalars()
         .all()
     )
-
     tag = request.args.get("tag")
     year = request.args.get("year")
     author = request.args.get("author")
@@ -152,11 +151,12 @@ def home():
     
     filters.append(partial(hide_drafts, current_user, SUPER_ID))
 
-    posts_set = set(result)
+    filtered_posts = result
+
     for filter_func in filters:
-        posts_set &= set(filter_func(result))
-    print(posts_set)
-    posts = add_author(list(posts_set), User)
+        filtered_posts = [post for post in filtered_posts if post in filter_func(result)]
+
+    posts = add_author(filtered_posts, User)
 
     return render_template("index.html", all_posts=posts, page=page, max_page=max_page, filter=[(tag, "tag"), (year, "year"), (author, "author")] if tag or year or author else [])
 
