@@ -23,9 +23,9 @@
           <span class="meta">
             by 
             <a href="{{ url_for('show_author', author=post.author.username|lower|replace(' ', '-'))}}">{{ post.author.username }}</a>
-            on {{ post.create_date }}
+            on {{ post.create_date|datetimeformat(DATE_FORMAT) }}
             {% if post.edit_date and DISPLAY_EDIT_DATE %} 
-            &#124; edited on {{ post.edit_date }}
+            &#124; edited on {{ post.edit_date|datetimeformat(DATE_FORMAT) }}
             {% endif %}
             {% if DISPLAY_READING_TIME %}
             &#124; 
@@ -82,7 +82,7 @@
                   >
                   {{ comment.author.username }}
                   {% if comment.author.admin %}&#10004;{% endif %}
-                  &#124; {{ comment.create_date }} 
+                  &#124; {{ comment.create_date|datetimeformat(DATE_FORMAT_LONG) }} <em>{% if comment.edited %}(edited){% endif %}</em>
                   
                   {% if current_user.id != ANONYMOUS_ID and current_user.id == comment.author_id %}
                     &#124;

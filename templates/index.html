@@ -63,9 +63,9 @@
             href="{{ url_for('home', author=post.author.username, tag=request.args.get('tag'), year=request.args.get('year'))}}"
             >{{ post.author.username }}</a
           >
-          on {% set month_day,year = post.create_date.split(',') %}
+          on {% set year = post.create_date|datetimeformat('yyyy') %}
           <a href="{{ url_for('home', year=year.strip(), tag=request.args.get('tag'), author=request.args.get('author')) }}"
-            >{{ post.create_date }}</a
+            >{{ post.create_date|datetimeformat(DATE_FORMAT) }}</a
           >
           {% if current_user.id == post.author.id or current_user.id == SUPER_ID %}
           <a

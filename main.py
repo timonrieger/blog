@@ -15,6 +15,7 @@ from flask import (
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
 from flask_gravatar import Gravatar
+from flask_babel import Babel
 from flask_login import (
     UserMixin,
     login_user,
@@ -40,6 +41,8 @@ from src.utils import (
     calculate_reading_time,
 )
 from src.config import (
+    DATE_FORMAT,
+    DATE_FORMAT_LONG,
     LANGUAGE,
     DISPLAY_EDIT_DATE,
     DISPLAY_READING_TIME,
@@ -47,7 +50,7 @@ from src.config import (
 from jinja2.exceptions import TemplateNotFound
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
-from sqlalchemy import Integer, String, Text, Boolean
+from sqlalchemy import Integer, String, Text, Boolean, DateTime, func
 from typing import List
 from werkzeug.security import generate_password_hash, check_password_hash
 import dotenv
@@ -60,6 +63,8 @@ app.secret_key = os.getenv("SECRET_KEY")
 
 ckeditor = CKEditor(app)
 Bootstrap5(app)
+
+babel = Babel(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -111,8 +116,8 @@ class BlogPost(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
     subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
-    create_date: Mapped[str] = mapped_column(String(250), nullable=False)
-    edit_date: Mapped[str] = mapped_column(String(250), nullable=True)
+    create_date: Mapped[dt] = mapped_column(DateTime, default=func.current_timestamp(), nullable=False)
+    edit_date: Mapped[dt] = mapped_column(DateTime, onupdate=func.current_timestamp(), nullable=True)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
     deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -130,7 +135,8 @@ class BlogComment(db.Model):
     __tablename__ = "comment"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     text: Mapped[str] = mapped_column(String, nullable=False)
-    create_date: Mapped[str] = mapped_column(String, nullable=False)
+    create_date: Mapped[dt] = mapped_column(DateTime, default=func.current_timestamp(), nullable=False)
+    edited: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # Relationships
     author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("user.id"))
@@ -151,6 +157,8 @@ def global_vars():
         LANGUAGE=LANGUAGE,
         DISPLAY_EDIT_DATE=DISPLAY_EDIT_DATE,
         DISPLAY_READING_TIME=DISPLAY_READING_TIME,
+        DATE_FORMAT=DATE_FORMAT,
+        DATE_FORMAT_LONG=DATE_FORMAT_LONG,
     )
 
 
@@ -175,7 +183,6 @@ def admin_required(f):
 
 
 @app.route("/")
-#@with_etag
 def home():
     page = int(request.args.get("page", 1))
     posts_per_page = 10
@@ -247,6 +254,7 @@ def show_post(post_title):
         comment_form = CommentForm(comment=comment.text)
         if comment_form.validate_on_submit():
             comment.text = comment_form.comment.data
+            comment.edited = True
             db.session.commit()
             flash("Commment successfully updated!", "success")
             return redirect(url_for("show_post", post_title=post_title, commented=True))
@@ -255,12 +263,10 @@ def show_post(post_title):
         comment_form = CommentForm()
         if comment_form.validate_on_submit():
             if current_user.is_authenticated:
-                time = dt.now().strftime("%b %d, %Y") + " at " + dt.now().strftime("%H:%M")
                 new_comment = BlogComment(
                     text=comment_form.comment.data,
                     parent_post=db.get_or_404(BlogPost, post.id),
                     author_id=current_user.id,
-                    create_date=time,
                 )
                 db.session.add(new_comment)
                 db.session.commit()
@@ -295,7 +301,6 @@ def new_post():
             subtitle=form.subtitle.data,
             body=form.body.data,
             img_url=form.img_url.data,
-            create_date=date.today().strftime("%B %d, %Y"),
             author_id=current_user.id,
             is_draft=form.is_draft.data,
             tags=json.dumps([tag.strip() for tag in form.tags.data.split(',')] if not "" else [])
@@ -325,7 +330,6 @@ def edit_post(post_title):
         post.title = edit_form.title.data
         post.subtitle = edit_form.subtitle.data
         post.img_url = edit_form.img_url.data
-        post.edit_date = date.today().strftime("%B %d, %Y") if edit_form.body.data != post.body else None
         post.body = edit_form.body.data
         post.is_draft = edit_form.is_draft.data
         post.tags=json.dumps([tag.strip() for tag in edit_form.tags.data.split(',')] if not "" else [])
