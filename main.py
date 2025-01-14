@@ -41,7 +41,6 @@ from src.utils import (
 )
 from src.config import (
     LANGUAGE,
-    ENABLE_TRANSLATIONS,
     DISPLAY_EDIT_DATE,
     DISPLAY_READING_TIME,
 )
@@ -108,14 +107,9 @@ class User(db.Model, UserMixin):
     password: Mapped[str] = mapped_column(String(150))
     username: Mapped[str] = mapped_column(String(150), unique=True)
     admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    # Relationships
-    posts: Mapped[List["Post"]] = relationship("Post", back_populates="author")
-    comments: Mapped[List["Comment"]] = relationship(
-        "Comment", back_populates="comment_author"
-    )
 
 
-class Post(db.Model):
+class BlogPost(db.Model):
     __tablename__ = "post"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
@@ -129,14 +123,13 @@ class Post(db.Model):
     tags: Mapped[str] = mapped_column(String, default=json.dumps([]))
 
     # Relationships
-    author: Mapped[str] = relationship("User", back_populates="posts")
     author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("user.id"))
-    comments: Mapped[List["Comment"]] = relationship(
-        "Comment", back_populates="parent_post"
+    comments: Mapped[List["BlogComment"]] = relationship(
+        "BlogComment", back_populates="parent_post"
     )
 
 
-class Comment(db.Model):
+class BlogComment(db.Model):
     __tablename__ = "comment"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     text: Mapped[str] = mapped_column(String, nullable=False)
@@ -144,9 +137,8 @@ class Comment(db.Model):
     deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # Relationships
     author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("user.id"))
-    comment_author: Mapped[str] = relationship("User", back_populates="comments")
     post_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("post.id"))
-    parent_post: Mapped["Post"] = relationship("Post", back_populates="comments")
+    parent_post: Mapped["BlogPost"] = relationship("BlogPost", back_populates="comments")
 
 
 with app.app_context():
@@ -160,7 +152,6 @@ def global_vars():
         SUPER_ID=SUPER_ID,
         ANONYMOUS_ID=ANONYMOUS_ID,
         LANGUAGE=LANGUAGE,
-        ENABLE_TRANSLATIONS=ENABLE_TRANSLATIONS,
         DISPLAY_EDIT_DATE=DISPLAY_EDIT_DATE,
         DISPLAY_READING_TIME=DISPLAY_READING_TIME,
     )
@@ -191,7 +182,7 @@ def home():
     page = int(request.args.get("page", 1))
     posts_per_page = 10
     offset = (page - 1) * posts_per_page
-    total_posts = Post.query.count()
+    total_posts = BlogPost.query.count()
     max_page = max(1, (total_posts + posts_per_page - 1) // posts_per_page)
 
     if page < 1 or page > max_page:
@@ -199,9 +190,9 @@ def home():
 
     result = (
         db.session.execute(
-            db.select(Post)
-            .order_by(Post.id.desc())
-            .where(Post.deleted == False)
+            db.select(BlogPost)
+            .order_by(BlogPost.id.desc())
+            .where(BlogPost.deleted == False)
             .limit(posts_per_page)
             .offset(offset)
         )
@@ -221,23 +212,24 @@ def home():
     
     filters.append(partial(hide_drafts, current_user, SUPER_ID))
 
-    posts_set = set(result)
-    for filter_func in filters:
-        posts_set &= set(filter_func(result))
+    filtered_posts = result
 
-    posts = add_author(list(posts_set), User)
+    for filter_func in filters:
+        filtered_posts = [post for post in filtered_posts if post in filter_func(result)]
+
+    posts = add_author(filtered_posts, User)
 
     return render_template("index.html", all_posts=posts, page=page, max_page=max_page, filter=[(tag, "tag"), (year, "year"), (author, "author")] if tag or year or author else [])
 
 
 @app.route("/<post_title>", methods=["GET", "POST"])
 def show_post(post_title):
-    post = find_post(post_title, Post, User)
+    post = find_post(post_title, BlogPost, User)
     result = (
         db.session.execute(
-            db.select(Comment).where(
-                Comment.post_id == post.id, Comment.deleted == False
-            ).order_by(Comment.id.asc())
+            db.select(BlogComment).where(
+                BlogComment.post_id == post.id, BlogComment.deleted == False
+            ).order_by(BlogComment.id.asc())
         )
         .scalars()
         .all()
@@ -248,7 +240,7 @@ def show_post(post_title):
         if not current_user.is_authenticated or current_user.id == ANONYMOUS_ID:
             flash("As an anonymous user you cannot edit comments!", "danger")
             return redirect(url_for("show_post", post_title=post_title, commented=True))
-        comment = Comment.query.filter_by(id=edit_comment).first()
+        comment = BlogComment.query.filter_by(id=edit_comment).first()
         if not comment or comment.deleted:
             abort(404)
         if comment.author_id != current_user.id:
@@ -266,9 +258,9 @@ def show_post(post_title):
         if comment_form.validate_on_submit():
             if current_user.is_authenticated:
                 time = dt.now().strftime("%b %d, %Y") + " at " + dt.now().strftime("%H:%M")
-                new_comment = Comment(
+                new_comment = BlogComment(
                     text=comment_form.comment.data,
-                    parent_post=db.get_or_404(Post, post.id),
+                    parent_post=db.get_or_404(BlogPost, post.id),
                     author_id=current_user.id,
                     create_date=time,
                 )
@@ -294,13 +286,13 @@ def show_post(post_title):
 @login_required
 @admin_required
 def new_post():
-    unique_tags = get_unique_tags(Post)
+    unique_tags = get_unique_tags(BlogPost)
 
     form = CreatePostForm()
     form.tags.description = get_tags_description(unique_tags)
 
     if form.validate_on_submit():
-        new_post = Post(
+        new_post = BlogPost(
             title=form.title.data,
             subtitle=form.subtitle.data,
             body=form.body.data,
@@ -320,12 +312,12 @@ def new_post():
 @login_required
 @admin_required
 def edit_post(post_title):
-    post = find_post(post_title, Post, User)
+    post = find_post(post_title, BlogPost, User)
     if not post:
         flash(f"No post found for title {post_title}!", "danger")
         return redirect(url_for("home"))
     
-    unique_tags = get_unique_tags(Post)
+    unique_tags = get_unique_tags(BlogPost)
 
     edit_form = CreatePostForm(
         title=post.title, subtitle=post.subtitle, img_url=post.img_url, body=post.body, is_draft=post.is_draft, tags=', '.join((json.loads(post.tags)))
@@ -349,7 +341,7 @@ def edit_post(post_title):
 @login_required
 @admin_required
 def delete_post(post_title):
-    post = find_post(post_title, Post, User)
+    post = find_post(post_title, BlogPost, User)
     if not post:
         flash(f"No post found for title {post_title}!", "danger")
         return redirect(url_for("home"))
@@ -371,7 +363,7 @@ def delete_post(post_title):
 
 @app.route("/<post_title>/restore")
 def restore_post(post_title):
-    post = find_post(post_title, Post, User)
+    post = find_post(post_title, BlogPost, User)
     if current_user.id == ANONYMOUS_ID:
         flash("As an anonymous user you cannot restore comments!", "danger")
     if current_user.id == post.author_id or current_user.id == SUPER_ID:
@@ -387,7 +379,7 @@ def restore_post(post_title):
 @app.route("/<post_title>/delete/comment/<int:comment_id>")
 @login_required
 def delete_comment(post_title, comment_id):
-    comment = db.get_or_404(Comment, comment_id)
+    comment = db.get_or_404(BlogComment, comment_id)
 
     if current_user.id == ANONYMOUS_ID:
         flash("As an anonymous user you cannot delete comments!", "danger")
@@ -409,7 +401,7 @@ def delete_comment(post_title, comment_id):
 @app.route("/<post_title>/restore/comment/<int:comment_id>")
 @login_required
 def restore_comment(post_title, comment_id):
-    comment = db.get_or_404(Comment, comment_id)
+    comment = db.get_or_404(BlogComment, comment_id)
 
     if current_user.id == comment.author_id or current_user.id == SUPER_ID:
         comment.deleted = False
@@ -505,9 +497,9 @@ def rss_feed():
 
     result = (
         db.session.execute(
-            db.select(Post)
-            .order_by(Post.id.desc())
-            .where(Post.deleted == False, Post.is_draft == False)
+            db.select(BlogPost)
+            .order_by(BlogPost.id.desc())
+            .where(BlogPost.deleted == False, BlogPost.is_draft == False)
         )
         .scalars()
         .all()
