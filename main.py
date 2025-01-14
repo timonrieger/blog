@@ -1,4 +1,5 @@
 from datetime import datetime as dt, date
+import hashlib
 import json
 from flask import (
     Flask,
@@ -14,7 +15,6 @@ from flask import (
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
 from flask_gravatar import Gravatar
-from flask_caching import Cache
 from flask_login import (
     UserMixin,
     login_user,
@@ -66,9 +66,6 @@ login_manager.init_app(app)
 login_manager.login_message = u"You need to login to use this feature. Use your own account or login anonymously!"
 login_manager.login_view = "/login"
 login_manager.login_message_category = "danger"
-
-# cache = Cache(config={"CACHE_TYPE": "SimpleCache"})
-# cache.init_app(app)
 
 gravatar = Gravatar(
     app,
@@ -178,6 +175,7 @@ def admin_required(f):
 
 
 @app.route("/")
+#@with_etag
 def home():
     page = int(request.args.get("page", 1))
     posts_per_page = 10
@@ -563,6 +561,31 @@ def add_header(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Cache-Control"] = "max-age=86400"
+    return response
+
+
+@app.after_request
+def add_etag(response):
+    """
+    Automatically add ETag headers and handle cache invalidation.
+    """
+    # Only apply invalidation to GET or HEAD requests and non-error responses
+    if request.method not in ["GET", "HEAD"] or response.status_code != 200:
+        return response
+
+    # Exclude static from invalidation
+    if request.path.startswith('/static/'):
+        return response
+
+    content = response.get_data(as_text=True)
+    etag = hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+    if request.headers.get("If-None-Match") == etag:
+        # Content is unchanged, return 304 Not Modified
+        response.status_code = 304
+
+    response.headers["ETag"] = etag
+    response.headers["Cache-Control"] = "public, max-age=0"
     return response
 
 

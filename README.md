@@ -69,6 +69,7 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 - **Soft deletion with undo option**: Deleting posts and comments does not erase them entirely, but rather flag and hide them. 
 - **Filter by tag, author and year**: Posts can be filtered by tag, author and year to narrow down the results.
 - **RSS Support**: Auto-generated RSS feed, which users can subscribe to with their RSS-Reader to receive new posts comfortably.
+- **HTTP/Browser Caching Strategy**: Invalidates the browser cache for changed content, else uses the cached version.
 
 ## Limitations
 
@@ -175,7 +176,7 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 - **Login**: `/login` - Login as a user or anonymously.
 - **Register**: `/register` - Register a user.
 - **Logout**: `/logout` - Logout a user.
-- **RSS**: `feed`/`/rss`/`/rss.xml` - Load blog feed users can subscribe to.
+- **RSS**: `/feed`, `/rss` and `/rss.xml` - Load blog feed users can subscribe to.
 
 ## Roles
 There are five types of users:
@@ -201,7 +202,6 @@ There are five types of users:
    - SQLAlchemy==2.0.25
    - requests==2.31.0
    - python-dotenv==0.19.1
-   - flask-caching==1.10.1
    - gunicorn==20.0.0
    - psycopg2-binary==2.9.10
 
