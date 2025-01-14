@@ -300,7 +300,7 @@ def new_post():
             create_date=date.today().strftime("%B %d, %Y"),
             author_id=current_user.id,
             is_draft=form.is_draft.data,
-            tags=json.dumps([tag.strip() for tag in form.tags.data.split(',')])  # Convert tags to JSON format
+            tags=json.dumps([tag.strip() for tag in form.tags.data.split(',')] if not "" else [])
         )
         db.session.add(new_post)
         db.session.commit()
@@ -327,10 +327,10 @@ def edit_post(post_title):
         post.title = edit_form.title.data
         post.subtitle = edit_form.subtitle.data
         post.img_url = edit_form.img_url.data
+        post.edit_date = date.today().strftime("%B %d, %Y") if edit_form.body.data != post.body else None
         post.body = edit_form.body.data
-        post.edit_date = date.today().strftime("%B %d, %Y")
         post.is_draft = edit_form.is_draft.data
-        post.tags = json.dumps([tag.strip() for tag in edit_form.tags.data.split(',')])
+        post.tags=json.dumps([tag.strip() for tag in edit_form.tags.data.split(',')] if not "" else [])
         db.session.commit()
         flash("Post successfully updated!", "success")
         return redirect(url_for("show_post", post_title=parse_title(post.title)))
