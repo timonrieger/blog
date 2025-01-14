@@ -452,10 +452,10 @@ def rss_feed():
     rss_feed = f"""<?xml version="1.0" encoding="UTF-8" ?>
     <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
         <channel>
-            <title>Blog Boiler Pro RSS Feed</title>
+            <title>Brain Snippets Blog RSS Feed</title>
             <link>{url_for('home', _external=True)}</link>
             <atom:link href="{ url_for('rss_feed', _external=True) }" rel="self" type="application/rss+xml" />
-            <description>Latest posts from Blog Boiler Pro</description>
+            <description>Latest posts from Brain Snippets Blog</description>
             <language>en-us</language>
             {''.join(rss_items)}
         </channel>
