@@ -432,6 +432,9 @@ def show_author(author):
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("home"))
+    
     form = LoginForm()
     redirect_to = request.args.get("next")
 
@@ -466,6 +469,9 @@ def login():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    if current_user.is_authenticated:
+        return redirect(url_for("home")) 
+    
     form = RegisterForm()
 
     if form.validate_on_submit():
@@ -496,6 +502,9 @@ def register():
 
 @app.route("/logout")
 def logout():
+    if not current_user.is_authenticated:
+        return redirect(url_for("home"))
+
     username = current_user.username
     logout_user()
     flash(gettext(u"Logout successful, %(username)s!", username=username), "success")
