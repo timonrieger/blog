@@ -34,6 +34,7 @@ from src.utils import (
     find_post,
     from_json,
     get_tags_description,
+    get_time,
     get_unique_tags,
     hide_drafts,
     parse_title,
@@ -49,12 +50,13 @@ from src.config import (
     LANGUAGE,
     DISPLAY_EDIT_DATE,
     DISPLAY_READING_TIME,
+    TIMEZONE_OFFSET
 )
 from jinja2.exceptions import TemplateNotFound
 from jinja2.ext import i18n
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
-from sqlalchemy import Integer, String, Text, Boolean, DateTime, func
+from sqlalchemy import Integer, String, Text, Boolean, DateTime
 from typing import List
 from werkzeug.security import generate_password_hash, check_password_hash
 import dotenv
@@ -121,8 +123,8 @@ class BlogPost(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
     subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
-    create_date: Mapped[dt] = mapped_column(DateTime, default=func.current_timestamp(), nullable=False)
-    edit_date: Mapped[dt] = mapped_column(DateTime, onupdate=func.current_timestamp(), nullable=True)
+    create_date: Mapped[dt] = mapped_column(DateTime, default=get_time(TIMEZONE_OFFSET), nullable=False)
+    edit_date: Mapped[dt] = mapped_column(DateTime, nullable=True)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
     deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -140,7 +142,7 @@ class BlogComment(db.Model):
     __tablename__ = "comment"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     text: Mapped[str] = mapped_column(String, nullable=False)
-    create_date: Mapped[dt] = mapped_column(DateTime, default=func.current_timestamp(), nullable=False)
+    create_date: Mapped[dt] = mapped_column(DateTime, default=get_time(TIMEZONE_OFFSET), nullable=False)
     edited: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # Relationships
@@ -204,7 +206,7 @@ def home():
     result = (
         db.session.execute(
             db.select(BlogPost)
-            .order_by(BlogPost.id.desc())
+            .order_by(BlogPost.create_date.desc())
             .where(BlogPost.deleted == False)
             .limit(posts_per_page)
             .offset(offset)
@@ -337,6 +339,9 @@ def edit_post(post_title):
         post.title = edit_form.title.data
         post.subtitle = edit_form.subtitle.data
         post.img_url = edit_form.img_url.data
+        if post.is_draft and not edit_form.is_draft.data:
+            post.create_date = get_time(TIMEZONE_OFFSET)
+        post.edit_date = get_time(TIMEZONE_OFFSET) if post.body != edit_form.body.data and not post.is_draft else None
         post.body = edit_form.body.data
         post.is_draft = edit_form.is_draft.data
         post.tags=json.dumps([tag.strip() for tag in edit_form.tags.data.split(',')] if not "" else [])

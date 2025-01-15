@@ -3,7 +3,12 @@ import json
 import os
 import hashlib
 from werkzeug.exceptions import NotFound
+from datetime import datetime, timezone, timedelta
 
+
+def get_time(timezone_offset):
+    tzinfo = timezone(timedelta(hours=timezone_offset))
+    return datetime.now(tz=tzinfo)
 
 def parse_title(raw_title):
     """Converts the post title to a url string"""

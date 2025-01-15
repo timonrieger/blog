@@ -165,8 +165,9 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 5. **Update the `src/config.py` configuration file
    - `LANGUAGE`: Your blog should be in a different language than English? <a href="#multi-language-support">start here</a>
    - `DISPLAY_READING_TIME`: Show the approximate reading time on each post (True/False).
-   - `DISPLAY_EDIT_DATE`: Show the edit date if you edited the post in some way (True/False).
+   - `DISPLAY_EDIT_DATE`: Show the edit date if you edited the post body (True/False).
    - `DRAFT_ON_DEFAULT`: Sets the checkbox to publish as draft in the post form on default (True/False).
+   - `TIMEZONE_OFFSET`: Set the offset to UTC (e.g. for New York -5)
    - `DATE_FORMAT`: The format for dates (used everywhere except comments).
    - `DATE_FORMAT_LONG`: The format for dates (used in comments)
 
