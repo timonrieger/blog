@@ -50,7 +50,8 @@ from src.config import (
     LANGUAGE,
     DISPLAY_EDIT_DATE,
     DISPLAY_READING_TIME,
-    TIMEZONE_OFFSET
+    TIMEZONE_OFFSET,
+    POSTS_PER_PAGE
 )
 from jinja2.exceptions import TemplateNotFound
 from jinja2.ext import i18n
@@ -194,7 +195,7 @@ def admin_required(f):
 @app.route("/")
 def home():
     page = int(request.args.get("page", 1))
-    posts_per_page = 10
+    posts_per_page = POSTS_PER_PAGE
     offset = (page - 1) * posts_per_page
     total_posts = BlogPost.query.count()
     max_page = max(1, (total_posts + posts_per_page - 1) // posts_per_page)
