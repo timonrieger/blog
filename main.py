@@ -71,7 +71,7 @@ ckeditor = CKEditor(app)
 Bootstrap5(app)
 
 babel = Babel()
-babel.init_app(app, default_locale="de")
+babel.init_app(app, default_locale="en")
 
 login_manager = LoginManager()
 login_manager.init_app(app)

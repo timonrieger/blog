@@ -1,8 +1,8 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, TextAreaField, BooleanField, SelectMultipleField
-from wtforms.validators import DataRequired, Optional
+from wtforms import StringField, SubmitField, TextAreaField, BooleanField, PasswordField, EmailField
+from wtforms.validators import DataRequired, Optional, Length, Email
 from flask_ckeditor import CKEditorField
-from src.config import DRAFT_ON_DEFAULT
+from src.config import DRAFT_ON_DEFAULT, CHECK_EMAIL
 from src.utils import validate_tags_format
 
 
@@ -12,20 +12,23 @@ class CreatePostForm(FlaskForm):
     img_url = StringField("Blog Image URL", validators=[DataRequired()])
     body = CKEditorField("Blog Content", validators=[DataRequired()])
     tags = StringField("Tags (comma-separated)",validators=[Optional(), validate_tags_format])
-    is_draft = BooleanField("Save as a draft?")
+    is_draft = BooleanField("Save as a draft?", default=DRAFT_ON_DEFAULT)
     submit = SubmitField("Publish")
 
 
 class RegisterForm(FlaskForm):
-    email = StringField(label="Email", validators=[DataRequired()])
-    password = StringField(label="Password", validators=[DataRequired()])
+    if CHECK_EMAIL:
+        email = EmailField(label="Email", validators=[DataRequired(), Email(check_deliverability=True)])
+    else:
+        email = EmailField(label="Email", validators=[DataRequired()])  
+    password = PasswordField(label="Password", validators=[DataRequired(), Length(min=8, max=64)])
     username = StringField(label="Username", validators=[DataRequired()])
     submit = SubmitField("Sign Me Up!")
 
 
 class LoginForm(FlaskForm):
-    email = StringField(label="Email", validators=[DataRequired()])
-    password = StringField(label="Password", validators=[DataRequired()])
+    email = EmailField(label="Email", validators=[DataRequired()])
+    password = PasswordField(label="Password", validators=[DataRequired()])
     submit = SubmitField("Let me in!")
 
 

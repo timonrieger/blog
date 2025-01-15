@@ -167,14 +167,15 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
    - `DISPLAY_READING_TIME`: Show the approximate reading time on each post (True/False).
    - `DISPLAY_EDIT_DATE`: Show the edit date if you edited the post body (True/False).
    - `DRAFT_ON_DEFAULT`: Sets the checkbox to publish as draft in the post form on default (True/False).
-   - `TIMEZONE_OFFSET`: Set the offset to UTC (e.g. for New York -5)
-   - `DATE_FORMAT`: The format for dates (used everywhere except comments).
-   - `DATE_FORMAT_LONG`: The format for dates (used in comments)
+   - `TIMEZONE_OFFSET`: Set the offset to UTC (e.g. for New York -5) (± number)
+   - `DATE_FORMAT`: The format for dates (used everywhere except comments) (valid datetime format).
+   - `DATE_FORMAT_LONG`: The format for dates (used in comments) (valid datetime format).
 
       => [Datetime Format Guide](https://www.pythonmorsels.com/strptime/)
-   - `BLOG_NAME`: The name of your blog
-   - `BLOG_TITLE`: The title that shows up on search machines for the home page
-   - `BLOG_DESCRIPTION`: The description that shows up on search machines for the home page
+   - `CHECK_EMAIL`: Whether to check if the email is valid/delivarable (True/False)
+   - `BLOG_NAME`: The name of your blog (string).
+   - `BLOG_TITLE`: The title that shows up on search machines for the home page (string).
+   - `BLOG_DESCRIPTION`: The description that shows up on search machines for the home page (string).
 
 
 
