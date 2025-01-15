@@ -21,16 +21,26 @@
           <h2 class="subheading">{{ post.subtitle }}</h2>
           <hr>
           <span class="meta">
-            by 
+            {% trans %}by{% endtrans %}
+            {% set year = post.create_date|datetimeformat('yyyy') %}
             <a href="{{ url_for('show_author', author=post.author.username|lower|replace(' ', '-'))}}">{{ post.author.username }}</a>
-            on {{ post.create_date|datetimeformat(DATE_FORMAT) }}
+            {% trans %}on{% endtrans %}
+            {% trans trimmed post_publish_date=post.create_date|datetimeformat(DATE_FORMAT) %}
+              {{ post_publish_date }}
+            {% endtrans %}
             {% if post.edit_date and DISPLAY_EDIT_DATE %} 
-            &#124; edited on {{ post.edit_date|datetimeformat(DATE_FORMAT) }}
+              &#124; 
+              {% trans trimmed post_edit_date=post.edit_date|datetimeformat(DATE_FORMAT) %}
+                edited on {{ post_edit_date }}
+              {% endtrans %}
             {% endif %}
             {% if DISPLAY_READING_TIME %}
             &#124; 
-              {% set reading_time = calculate_reading_time(post.body|safe) %}
-              {{ reading_time }} minute{% if reading_time != 1 %}s{% endif %}
+              {% trans trimmed reading_time=calculate_reading_time(post.body|safe) %}
+                {{ reading_time }} minute
+              {% pluralize %}
+                {{ reading_time }} minutes
+              {% endtrans %}
             {% endif %}
           </span>
         </div>
@@ -50,7 +60,7 @@
             <a
               class="btn btn-primary float-right"
               href="{{ url_for('edit_post', post_title=post.title|lower|replace(' ', '-')) }}"
-              >Edit Post</a
+              >{% trans %}Edit Post{% endtrans %}</a
             >
           </div>
           {% endif %}
@@ -61,7 +71,7 @@
         <!-- Comments Area -->
         {{ render_form(form) }}
         <div class="comment mb-5">
-          <sup>&gt; <a href="https://github.com/timonrieger/blog-boiler-pro/blob/main/.github/demo/comments.png">How to comment</a></sup>
+          <sup>&gt; <a href="https://github.com/timonrieger/blog-boiler-pro/blob/main/.github/demo/comments.png">{% trans %}How to comment{% endtrans %}</a></sup>
           <ul class="commentList">
             {% for comment in comments %}
             <li>
@@ -70,11 +80,14 @@
                 <!-- Use a random Gravatar-like URL for anonymous users -->
                 <img
                   src="{{ anonymous_gravatar() | gravatar }}"
-                  alt="Anonymous Gravatar"
+                  alt="{% trans %}Anonymous Gravatar{% endtrans %}"
                 />
                 {% else %}
                 <!-- Use Gravatar URL for logged-in users -->
-                <img src="{{ comment.author.email | gravatar }}" />
+                <img 
+                  src="{{ comment.author.email | gravatar }}" 
+                  alt="Gravatar"
+                />
                 {% endif %}
               </div>
               <div class="commentText">
@@ -82,19 +95,23 @@
                   >
                   {{ comment.author.username }}
                   {% if comment.author.admin %}&#10004;{% endif %}
-                  &#124; {{ comment.create_date|datetimeformat(DATE_FORMAT_LONG) }} <em>{% if comment.edited %}(edited){% endif %}</em>
+                  &#124; 
+                  {% trans trimmed comment_publish_date=comment.create_date|datetimeformat(DATE_FORMAT_LONG) %}
+                    {{ comment_publish_date }}
+                  {% endtrans %}
+                  <em>{% if comment.edited %}({% trans %}edited{% endtrans %}){% endif %}</em>
                   
                   {% if current_user.id != ANONYMOUS_ID and current_user.id == comment.author_id %}
                     &#124;
                     <a
                       href="{{url_for('show_post', post_title=post.title|lower|replace(' ', '-'), edit_comment=comment.id) }}"
-                      title="Edit comment"
+                      title="{% trans %}Edit comment{% endtrans %}"
                       >&#9998;</a
                     >
                       {% if current_user.id == SUPER_ID %}
                         <a
                           href="{{url_for('delete_comment', post_title=post.title|lower|replace(' ', '-'), comment_id=comment.id) }}"
-                          title="Soft Delete"
+                          title="{% trans %}Soft delete{% endtrans %}"
                           >&#x2718;</a
                         >
                       {% endif %}

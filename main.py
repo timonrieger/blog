@@ -71,7 +71,7 @@ ckeditor = CKEditor(app)
 Bootstrap5(app)
 
 babel = Babel()
-babel.init_app(app, default_locale="en")
+babel.init_app(app, default_locale=LANGUAGE)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -234,7 +234,7 @@ def home():
 
     posts = add_author(filtered_posts, User)
 
-    return render_template("index.html", all_posts=posts, page=page, max_page=max_page, filter=[(tag, "tag"), (year, "year"), (author, "author")] if tag or year or author else [])
+    return render_template("index.html", all_posts=posts, page=page, max_page=max_page, filter=[(tag, gettext("tag")), (year, gettext("year")), (author, gettext("author"))] if tag or year or author else [])
 
 
 @app.route("/<post_title>", methods=["GET", "POST"])

@@ -65,6 +65,7 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 - **Customizable About Page:** Personalize an "About" page for each author to share their story or expertise.
 - **User Management:** Basic functionality to manage users: registration, login, anonymous users, and admin management.
 - **Admin Privileges:** Assign co-authors the admin role to write, edit, delete their blog posts and all comments. You remain the Super Admin.
+- **Multi Language Support:** Use the language your are writing in for the whole application (<a href="#multi-language-support">Read on</a>)
 - **Commenting System:** Users can publish and edit comments on posts, with moderation capabilities for the comment author and admins.
 - **Soft deletion with undo option**: Deleting posts and comments does not erase them entirely, but rather flag and hide them. 
 - **Filter by tag, author and year**: Posts can be filtered by tag, author and year to narrow down the results.
@@ -174,6 +175,7 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
       => [Datetime Format Guide](https://www.pythonmorsels.com/strptime/)
    - `CHECK_EMAIL`: Whether to check if the email is valid/delivarable (True/False)
    - `IMAGES_FOLDER`: The path to your images folder (path).
+   - `POSTS_PER_PAGE`: Number of posts on the home route before displaying pagination buttons (integer).
    - `BLOG_NAME`: The name of your blog (string).
    - `BLOG_TITLE`: The title that shows up on search machines for the home page (string).
    - `BLOG_DESCRIPTION`: The description that shows up on search machines for the home page (string).
@@ -182,12 +184,26 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 
 ## Multi-Language Support
 
-The blog is currently only available in English, but I am working on a  German version.
-If you want to contribute a language you are native in, feel free to open a PR that contains the translated `message.po` mapping for the language.
+The blog currently supports **English** (`en`) and **German** (`de`).
 
-If you don't want to help translating but rather use a different language, <a href="#compile-the-language">start here</a>
+When setting up your blog, you can define the default language for your application. The intent is not for users to switch between languages dynamically but to ensure that application texts align with the language you are writing in.
 
-If you want to help translate, just follow from here on.
+### Contribute a New Language
+
+If you'd like to contribute a new language you're fluent in, feel free to submit a Pull Request (PR) containing the translated `message.po` file for that language. Your contribution is highly appreciated! Note that there are approximately **75 phrases/sentences** to translate, making it a manageable task.
+
+### Using a Different Language Without Translating
+
+If you'd rather use a different language without contributing translations, start by following the instructions in the section [Compile the Language](#compile-the-language).
+
+### Translating a Language
+
+If you'd like to help translate, follow these steps:
+
+1. Navigate to the project root.
+
+   ```bash
+   cd /path/to/project
 
 Navigate to the project root.
 
@@ -200,7 +216,7 @@ find translations -mindepth 1 -maxdepth 1 -type d
 ### Get all strings for translation
 Extracts all translateable strings from the `.html` and `.py` files into `message.pot`.
 ```bash
-pybabel extract -F babel.cfg -o translations/messages.pot .
+pybabel extract -F babel.cfg -k lazy_gettext -o translations/messages.pot .
 ```
 
 ### a) Initialize a language (ONLY ONCE)
@@ -217,6 +233,7 @@ pybabel update -i translations/messages.pot -d translations
 We have to translate manually, but you can start out with [Deepl in VSCode](https://marketplace.visualstudio.com/items?itemName=soerenuhrbach.vscode-deepl). We use common not highly formal language.
 
 Fill the `msgstr ""` in the `LANG_LOCAL/LC_MESSAGES/messages.po` with the translation. Check existing languages if you're lost.
+`⌘F` and search for the term fuzzy and delete it ([docs](https://python-babel.github.io/flask-babel/#translating-applications)).
 
 ### Compile the language
 Compiles all languages for usage.

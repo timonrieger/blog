@@ -33,13 +33,18 @@
       {% if filter %}
       <div>
         <sup>
-          <a href="{{ url_for('home')}}" title="Clear">&#x2718;</a> 
-          Found {{ all_posts|length }} post{% if all_posts|length != 1 %}s{% endif %} for 
-           {% for filter in filter %}
+          <a href="{{ url_for('home') }}" title="{% trans %}Clear{% endtrans %}">&#x2718;</a> 
+          {% trans trimmed nr_posts=all_posts|length %}
+            Found {{ nr_posts }} post
+          {% pluralize %}
+            Found {{ nr_posts }} posts
+          {% endtrans %}
+          {% trans %}for{% endtrans %}
+          {% for filter in filter %}
             {% if filter[0] %}
               {% if filter[0] == 'draft' and current_user.admin %}
                 <span class="badge draft-badge">
-                {% else %}
+              {% else %}
                 <span class="badge default-badge">
               {% endif %}
               {{ filter[1] }}: {{ filter[0] }}</span>
@@ -58,24 +63,27 @@
           <h3 class="post-subtitle">{{ post.subtitle }}</h3>
         </a>
         <p class="post-meta">
-          by
+          {% trans %}by{% endtrans %}
           <a
             href="{{ url_for('home', author=post.author.username, tag=request.args.get('tag'), year=request.args.get('year'))}}"
             >{{ post.author.username }}</a
           >
-          on {% set year = post.create_date|datetimeformat('yyyy') %}
-          <a href="{{ url_for('home', year=year.strip(), tag=request.args.get('tag'), author=request.args.get('author')) }}"
-            >{{ post.create_date|datetimeformat(DATE_FORMAT) }}</a
-          >
+          {% trans %}on{% endtrans %}
+          {% set year = post.create_date|datetimeformat('yyyy') %}
+          <a href="{{ url_for('home', year=year.strip(), tag=request.args.get('tag'), author=request.args.get('author')) }}">
+            {% trans trimmed post_publish_date=post.create_date|datetimeformat(DATE_FORMAT) %}
+              {{ post_publish_date }}
+            {% endtrans %}
+          </a>
           {% if current_user.id == post.author.id or current_user.id == SUPER_ID %}
           <a
             href="{{ url_for('delete_post', post_title=post.title|lower|replace(' ', '-')) }}"
-            title="Soft Delete"
+            title="{% trans %}Soft delete{% endtrans %}"
             >&#x2718;</a
           >
           {% endif %} {% if post.is_draft %}<a
             href="{{ url_for('home', tag='draft', year=request.args.get('year'), author=request.args.get('author'))}}"
-            ><span class="badge draft-badge">draft</span></a
+            ><span class="badge draft-badge">{% trans %}draft{% endtrans %}</span></a
           >{% endif %} {% set tags_list = post.tags|from_json %} {% for tag in
           tags_list %}
           <a href="{{ url_for('home', tag=tag, year=request.args.get('year'), author=request.args.get('author'))}}"
@@ -94,13 +102,13 @@
         <a
           class="btn btn-secondary text-uppercase"
           href="{{ url_for('home', page=page - 1 ) }}"
-          >Newer Posts</a
+          >{% trans %}Newer Posts{% endtrans %}</a
         >
         {% endif %} {% if page < max_page %}
         <a
           class="btn btn-secondary text-uppercase"
           href="{{ url_for('home', page=page + 1 ) }}"
-          >Older Posts</a
+          >{% trans %}Older Posts{% endtrans %}</a
         >
         {% endif %}
       </div>

@@ -70,14 +70,14 @@
                 <a
                   class="nav-link px-lg-3 py-3 py-lg-4"
                   href="{{ url_for('login') }}"
-                  >Login</a
+                  >{% trans %}Login{% endtrans %}</a
                 >
               </li>
               <li class="nav-item">
                 <a
                   class="nav-link px-lg-3 py-3 py-lg-4"
                   href="{{ url_for('register') }}"
-                  >Register</a
+                  >{% trans %}Register{% endtrans %}</a
                 >
               </li>
             {% else %}
@@ -87,7 +87,7 @@
                   <a
                     class="nav-link px-lg-3 py-3 py-lg-4"
                     href="{{url_for('new_post')}}"
-                    >New Post &#43;</a
+                    >{% trans %}New Post{% endtrans %} &#43;</a
                   >
               </li>
               {% endif %}
@@ -95,7 +95,7 @@
                 <a
                   class="nav-link px-lg-3 py-3 py-lg-4"
                   href="{{ url_for('logout') }}"
-                  >Log Out, {{ current_user.username }}</a
+                  >{% trans user=current_user.username%}Log Out, {{ user }}{% endtrans %}</a
                 >
               </li>
             {% endif %}

@@ -3,7 +3,7 @@ import json
 import os
 import hashlib
 import re
-import logging
+from flask_babel import lazy_gettext
 from werkzeug.exceptions import NotFound
 from datetime import datetime, timezone, timedelta
 
@@ -31,12 +31,12 @@ def suggest_img_url(directory):
                     ext = os.path.splitext(file)[1]
 
     except Exception:
-        suggestion = "nothing found (use numbered filenames, e.g. 1.jpg)"
+        suggestion = lazy_gettext("nothing found (use numbered filenames, e.g. 1.jpg)")
     else:
         incremented_number = str(max_value + 1)
         suggestion = f"{incremented_number}{ext}"
     finally:
-        return f"Suggestion: {suggestion}"
+        return lazy_gettext("Suggestion: %(suggestion)s", suggestion=suggestion)
 
 
 def parse_title(raw_title):
@@ -107,11 +107,11 @@ def validate_tags_format(form, tags):
 
 def get_tags_description(tags):
     '''Add description to tag field.'''
-    if tags:
+    if tags and tags != [""]:
         suggestion = ', '.join(tags)
     else:
         suggestion = "nothing found (add tags first, e.g. travel, food, books)"
-    return f"Suggestion: {suggestion}"
+    return lazy_gettext("Suggestion: %(suggestion)s", suggestion=suggestion)
 
 
 def get_unique_tags(post_model):
@@ -132,7 +132,7 @@ def filter_posts_by_tag(tag, current_user, posts):
 
 def filter_posts_by_year(year, posts):
     '''Filter by the year the post was created.'''
-    return [post for post in posts if year in post.create_date]
+    return [post for post in posts if year == str(post.create_date.strftime("%Y"))]
 
 
 def hide_drafts(current_user, SUPER_ID, posts):
