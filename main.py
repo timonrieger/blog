@@ -530,13 +530,12 @@ def rss_feed():
     # Generate RSS feed
     rss_items = []
     for post in posts:
-        post_date = dt.strptime(post.create_date, "%B %d, %Y")
         rss_items.append(f"""
         <item>
             <title>{post.title}</title>
             <guid isPermaLink="true">{ url_for('show_post', post_title=post.title.lower().replace(' ', '-'), _external=True) }</guid>
             <description>{post.subtitle}</description>
-            <pubDate>{post_date.strftime('%a, %d %b %Y %H:%M:%S +0000')}</pubDate>
+            <pubDate>{post.create_date.strftime("%d. %B %Y")}</pubDate>
             <dc:creator>{post.author.username}</dc:creator>
         </item>
         """)
@@ -544,11 +543,11 @@ def rss_feed():
     rss_feed = f"""<?xml version="1.0" encoding="UTF-8" ?>
     <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
         <channel>
-            <title>Blog Boiler Pro</title>
+            <title>{BLOG_NAME}</title>
             <link>{url_for('home', _external=True)}</link>
             <atom:link href="{ url_for('rss_feed', _external=True) }" rel="self" type="application/rss+xml" />
             <description>{BLOG_DESCRIPTION}</description>
-            <language>en-us</language>
+            <language>{LANGUAGE}</language>
             {''.join(rss_items)}
         </channel>
     </rss>
