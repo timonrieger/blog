@@ -161,7 +161,6 @@ def global_vars():
         current_url=request.url_root,
         SUPER_ID=SUPER_ID,
         ANONYMOUS_ID=ANONYMOUS_ID,
-        LANGUAGE=LANGUAGE,
         DISPLAY_EDIT_DATE=DISPLAY_EDIT_DATE,
         DISPLAY_READING_TIME=DISPLAY_READING_TIME,
         DATE_FORMAT=DATE_FORMAT,
@@ -452,7 +451,7 @@ def login():
                 return redirect(redirect_to)
             return redirect(url_for("home"))
         else:
-            flash(gettext(u"Invalid credentials!"))
+            flash(gettext(u"Invalid credentials!"), "danger")
 
     if request.args.get("u") == str(ANONYMOUS_ID):
         user = User.query.filter_by(id=ANONYMOUS_ID).first()
