@@ -2,13 +2,42 @@ from collections import Counter
 import json
 import os
 import hashlib
+import re
+import logging
 from werkzeug.exceptions import NotFound
 from datetime import datetime, timezone, timedelta
 
 
 def get_time(timezone_offset):
+    '''Return current time for the specified timezone.'''
     tzinfo = timezone(timedelta(hours=timezone_offset))
     return datetime.now(tz=tzinfo)
+
+
+def suggest_img_url(directory):
+    '''Suggest the relative url for the next post's image.'''
+    try:
+        files = os.listdir(directory)
+        max_value = -1
+        ext = ""
+        num_pattern = re.compile(r'\d+')
+
+        for file in files:
+            match = num_pattern.search(file)
+            if match:
+                number = int(match.group())
+                if number > max_value:
+                    max_value = number
+                    ext = os.path.splitext(file)[1]
+
+    except Exception:
+        suggestion = "nothing found (use numbered filenames, e.g. 1.jpg)"
+    else:
+        incremented_number = str(max_value + 1)
+        suggestion = f"{incremented_number}{ext}"
+    finally:
+        return f"Suggestion: {suggestion}"
+
 
 def parse_title(raw_title):
     """Converts the post title to a url string"""
@@ -66,9 +95,11 @@ def validate_tags_format(form, tags):
     :param tags: A string containing comma-separated tags
     :return: A list of valid tags if the format is correct, otherwise raises a ValueError
     """
+    if form.tags.data == "":
+        return []
+    
     tags_list = [tag.strip() for tag in form.tags.data.split(',')]
     
-    # Check for empty tags (e.g., "tag1, , tag3")
     if any(not tag for tag in tags_list):
         raise ValueError("Tags must be separated by commas and cannot be empty.")
     
@@ -76,7 +107,11 @@ def validate_tags_format(form, tags):
 
 def get_tags_description(tags):
     '''Add description to tag field.'''
-    return ', '.join(tags)
+    if tags:
+        suggestion = ', '.join(tags)
+    else:
+        suggestion = "nothing found (add tags first, e.g. travel, food, books)"
+    return f"Suggestion: {suggestion}"
 
 
 def get_unique_tags(post_model):

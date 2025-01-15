@@ -173,6 +173,7 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 
       => [Datetime Format Guide](https://www.pythonmorsels.com/strptime/)
    - `CHECK_EMAIL`: Whether to check if the email is valid/delivarable (True/False)
+   - `IMAGES_FOLDER`: The path to your images folder (path).
    - `BLOG_NAME`: The name of your blog (string).
    - `BLOG_TITLE`: The title that shows up on search machines for the home page (string).
    - `BLOG_DESCRIPTION`: The description that shows up on search machines for the home page (string).
