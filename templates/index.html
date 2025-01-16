@@ -44,10 +44,11 @@
             {% if filter[0] %}
               {% if filter[0] == 'draft' and current_user.admin %}
                 <span class="badge draft-badge">
+                  {{ filter[1] }}: {% trans %}draft{% endtrans %}</span>
               {% else %}
                 <span class="badge default-badge">
+                {{ filter[1] }}: {{ filter[0] }}</span>
               {% endif %}
-              {{ filter[1] }}: {{ filter[0] }}</span>
             {% endif %}
           {% endfor %}
         </sup>
