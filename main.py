@@ -354,7 +354,7 @@ def edit_post(post_title):
             flash(gettext("Post successfully updated!"), "success")
             return redirect(url_for("show_post", post_title=parse_title(post.title)))
         elif edit_form.preview.data:
-            flash(gettext("You are in preview mode!", "success"))
+            flash(gettext("You are in preview mode!"), "success")
             return render_template(
                 "post.html",
                 preview=True,

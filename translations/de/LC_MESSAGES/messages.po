@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-01-16 00:18+0100\n"
+"POT-Creation-Date: 2025-01-16 14:06+0100\n"
 "PO-Revision-Date: 2025-01-14 15:55+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.16.0\n"
 
-#: main.py:78
+#: main.py:82
 msgid ""
 "You need to login to use this feature. Use your own or the anonymous "
 "account!"
@@ -24,7 +24,7 @@ msgstr ""
 "Melde dich an, um diese Funktion nutzen zu können. Verwende deinen "
 "eigenen oder den anonymen Account!"
 
-#: main.py:185
+#: main.py:190
 msgid ""
 "You do not have the necessary permissions to use this feature. Admin "
 "access is required!"
@@ -32,101 +32,105 @@ msgstr ""
 "Du hast nicht die erforderlichen Berechtigungen, um diese Funktion zu "
 "nutzen. Administratorzugriff ist erforderlich!"
 
-#: main.py:236
+#: main.py:241
 msgid "tag"
 msgstr "Tag"
 
-#: main.py:236
+#: main.py:241
 msgid "year"
 msgstr "Jahr"
 
-#: main.py:236
+#: main.py:241
 msgid "author"
 msgstr "Autor"
 
-#: main.py:255
+#: main.py:260
 msgid "As an anonymous user you cannot edit comments!"
 msgstr "Als anonymer Benutzer kannst keine Kommentare bearbeiten!"
 
-#: main.py:261 main.py:404 main.py:420
+#: main.py:266 main.py:418 main.py:434
 msgid "You are not the author of the comment!"
 msgstr "Du bist nicht der Autor des Kommentars!"
 
-#: main.py:268
+#: main.py:273
 msgid "Commment successfully updated!"
 msgstr "Kommentar erfolgreich aktualisiert!"
 
-#: main.py:282
+#: main.py:287
 msgid "Commment successfully posted!"
 msgstr "Kommentar erfolgreich veröffentlicht!"
 
-#: main.py:348
+#: main.py:354
 msgid "Post successfully updated!"
 msgstr "Beitrag erfolgreich aktualisiert!"
 
-#: main.py:361
+#: main.py:357
+msgid "You are in preview mode!"
+msgstr "Du bist im Vorschau Modus!"
+
+#: main.py:375
 msgid "As an anonymous user you cannot delete posts!"
 msgstr "Als anonymer Benutzer kannst du keine Beiträge löschen!"
 
-#: main.py:366
+#: main.py:380
 msgid "Successfully deleted the post!"
 msgstr "Beitrag erfolgreich gelöscht!"
 
-#: main.py:366 main.py:400
+#: main.py:380 main.py:414
 msgid "Undo"
 msgstr "Rückgängig"
 
-#: main.py:378
+#: main.py:392
 msgid "As an anonymous user you cannot restore comments!"
 msgstr "Als anonymer Benutzer kannst du keine Kommentare wiederherstellen!"
 
-#: main.py:382
+#: main.py:396
 msgid "Post successfully restored!"
 msgstr "Beitrag erfolgreich wiederhergestellt!"
 
-#: main.py:385
+#: main.py:399
 msgid "You are not the author of the post!"
 msgstr "Du bist nicht der Autor des Beitrags!"
 
-#: main.py:395
+#: main.py:409
 msgid "As an anonymous user you cannot delete comments!"
 msgstr "Als anonymer Benutzer kannst du keine Kommentare löschen!"
 
-#: main.py:400
+#: main.py:414
 msgid "Successfully deleted the comment!"
 msgstr "Kommentar erfolgreich gelöscht!"
 
-#: main.py:417
+#: main.py:431
 msgid "Comment successfully restored!"
 msgstr "Kommentar erfolgreich wiederhergestellt!"
 
-#: main.py:445
+#: main.py:459
 msgid "No account found. Register first!"
 msgstr "Kein Konto gefunden. Registriere dich zuerst!"
 
-#: main.py:449
+#: main.py:463
 #, python-format
 msgid "Login successful, %(username)s!"
 msgstr "Anmeldung erfolgreich, %(username)s!"
 
-#: main.py:454
+#: main.py:468
 msgid "Invalid credentials!"
 msgstr "Ungültige Anmeldedaten!"
 
-#: main.py:460
+#: main.py:474
 msgid "Logged in as an anonymous user. Start commenting anonymously!"
 msgstr "Angemeldet als anonymer Benutzer. Beginne, anonym zu kommentieren!"
 
-#: main.py:482
+#: main.py:496
 msgid "Already registered! Login instead."
 msgstr "Bereits registriert! Melde dich stattdessen an."
 
-#: main.py:494
+#: main.py:508
 #, python-format
 msgid "Registration and login successful, %(username)s!"
 msgstr "Registrierung und Anmeldung erfolgreich, %(username)s!"
 
-#: main.py:509
+#: main.py:523
 #, python-format
 msgid "Logout successful, %(username)s!"
 msgstr "Abmeldung erfolgreich, %(username)s!"
@@ -163,31 +167,35 @@ msgstr "Als Entwurf speichern?"
 msgid "Publish!"
 msgstr "Veröffentlichen!"
 
-#: src/forms.py:22 src/forms.py:24 src/forms.py:31
+#: src/forms.py:18
+msgid "Preview!"
+msgstr "Vorschau!"
+
+#: src/forms.py:24 src/forms.py:26 src/forms.py:33
 msgid "Email"
 msgstr "Email"
 
-#: src/forms.py:25 src/forms.py:32
+#: src/forms.py:27 src/forms.py:34
 msgid "Password"
 msgstr "Passwort"
 
-#: src/forms.py:26
+#: src/forms.py:28
 msgid "Username"
 msgstr "Benutzername"
 
-#: src/forms.py:27
+#: src/forms.py:29
 msgid "Sign Me Up!"
 msgstr "Meld mich an!"
 
-#: src/forms.py:33
+#: src/forms.py:35
 msgid "Let me in!"
 msgstr "Lass mich rein!"
 
-#: src/forms.py:37
+#: src/forms.py:40 src/forms.py:42
 msgid "Comment"
 msgstr "Kommentar"
 
-#: src/forms.py:38
+#: src/forms.py:43
 msgid "Send it!"
 msgstr "Senden!"
 
@@ -244,7 +252,7 @@ msgstr "am"
 msgid "%(post_publish_date)s"
 msgstr "%(post_publish_date)s"
 
-#: templates/index.html:81 templates/post.html:114
+#: templates/index.html:81 templates/post.html:129
 msgid "Soft delete"
 msgstr "Weiches Löschen"
 
@@ -292,7 +300,7 @@ msgstr ""
 "Um anonym zu kommentieren, melden dich <a href=\"%(login_url)s\">hier</a>"
 " an."
 
-#: templates/make-post.html:15 templates/post.html:63
+#: templates/make-post.html:15 templates/post.html:71
 msgid "Edit Post"
 msgstr "Beitrag bearbeiten"
 
@@ -312,24 +320,28 @@ msgid_plural "%(reading_time)s minutes"
 msgstr[0] "%(reading_time)s Minute"
 msgstr[1] "%(reading_time)s Minuten"
 
-#: templates/post.html:74
+#: templates/post.html:65
+msgid "Back to editor"
+msgstr "Zurück zum Editor"
+
+#: templates/post.html:88
 msgid "How to comment"
 msgstr "Wie man kommentiert"
 
-#: templates/post.html:83
+#: templates/post.html:98
 msgid "Anonymous Gravatar"
 msgstr "Anonymer Gravatar"
 
-#: templates/post.html:99
+#: templates/post.html:114
 #, python-format
 msgid "%(comment_publish_date)s"
 msgstr "%(comment_publish_date)s"
 
-#: templates/post.html:102
+#: templates/post.html:117
 msgid "edited"
 msgstr "bearbeitet"
 
-#: templates/post.html:108
+#: templates/post.html:123
 msgid "Edit comment"
 msgstr "Kommentar bearbeiten"
 
