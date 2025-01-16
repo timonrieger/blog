@@ -345,9 +345,18 @@ def edit_post(post_title):
         post.body = edit_form.body.data
         post.is_draft = edit_form.is_draft.data
         post.tags=json.dumps([tag.strip() for tag in edit_form.tags.data.split(',')] if not "" else [])
-        db.session.commit()
-        flash(gettext("Post successfully updated!"), "success")
-        return redirect(url_for("show_post", post_title=parse_title(post.title)))
+        if edit_form.publish.data:
+            db.session.commit()
+            flash(gettext("Post successfully updated!"), "success")
+            return redirect(url_for("show_post", post_title=parse_title(post.title)))
+        elif edit_form.preview.data:
+            flash(gettext("You are in preview mode!", "success"))
+            return render_template(
+                "post.html",
+                preview=True,
+                post=post,
+                calculate_reading_time=calculate_reading_time,
+            )
     return render_template("make-post.html", form=edit_form, is_edit=True)
 
 

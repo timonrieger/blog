@@ -14,7 +14,9 @@ class CreatePostForm(FlaskForm):
     body = CKEditorField(lazy_gettext("Content"), validators=[DataRequired()])
     tags = StringField(lazy_gettext("Tags"),validators=[Optional(), validate_tags_format])
     is_draft = BooleanField(lazy_gettext("Save as a draft?"), default=DRAFT_ON_DEFAULT)
-    submit = SubmitField(lazy_gettext("Publish!"))
+    publish = SubmitField(lazy_gettext("Publish!"))
+    preview = SubmitField(lazy_gettext("Preview!"),
+        render_kw={"formtarget": "_blank"})
 
 
 class RegisterForm(FlaskForm):

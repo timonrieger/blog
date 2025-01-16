@@ -56,7 +56,7 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 
 ## Features
 
-- **Create, Edit, Draft, Delete Blog Posts:** Easily manage blog content with intuitive CRUD operations with database storage.
+- **Create, Edit, Draft, Preview and Delete Blog Posts:** Easily manage blog content with intuitive CRUD operations with database storage.
 - **Pagination:** View posts with pagination for better navigation and user experience.
 - **User-Friendly Text Editor:** A simple and intuitive editor for creating and editing blog posts provided by CKEditor 4.
 - **Responsive Design with Bootstrap:** The site automatically adjusts to various screen sizes and devices for seamless usability.
