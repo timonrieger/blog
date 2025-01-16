@@ -22,16 +22,26 @@
           <h2 class="subheading">{{ post.subtitle }}</h2>
           <hr>
           <span class="meta">
-            by 
-            <a href="{{ url_for('show_author')}}">{{ post.author.username }}</a>
-            on {{ post.create_date }}
+            {% trans %}by{% endtrans %}
+            {% set year = post.create_date|datetimeformat('yyyy') %}
+            <a href="{{ url_for('show_author', author=post.author.username|lower|replace(' ', '-'))}}">{{ post.author.username }}</a>
+            {% trans %}on{% endtrans %}
+            {% trans trimmed post_publish_date=post.create_date|datetimeformat(DATE_FORMAT) %}
+              {{ post_publish_date }}
+            {% endtrans %}
             {% if post.edit_date and DISPLAY_EDIT_DATE %} 
-            &#124; edited on {{ post.edit_date }}
+              &#124; 
+              {% trans trimmed post_edit_date=post.edit_date|datetimeformat(DATE_FORMAT) %}
+                edited on {{ post_edit_date }}
+              {% endtrans %}
             {% endif %}
             {% if DISPLAY_READING_TIME %}
             &#124; 
-              {% set reading_time = calculate_reading_time(post.body|safe) %}
-              {{ reading_time }} minute{% if reading_time != 1 %}s{% endif %}
+              {% trans trimmed reading_time=calculate_reading_time(post.body|safe) %}
+                {{ reading_time }} minute
+              {% pluralize %}
+                {{ reading_time }} minutes
+              {% endtrans %}
             {% endif %}
           </span>
         </div>
@@ -48,70 +58,103 @@
         <div class="post-toolbar">
           {% if current_user.id == post.author.id or current_user.id == SUPER_ID %}
           <div class="d-flex justify-content-end mb-4">
-            <a
-              class="btn btn-primary float-right"
-              href="{{ url_for('edit_post', post_title=post.title|lower|replace(' ', '-')) }}"
-              >Edit Post</a
-            >
+            {% if preview %}
+              <a
+                class="btn btn-primary float-right"
+                href="#"
+                onclick="closeTab()"
+                >{% trans %}Back to editor{% endtrans %}</a
+              >
+            {% else %}
+              <a
+                class="btn btn-primary float-right"
+                href="{{ url_for('edit_post', post_title=post.title|lower|replace(' ', '-')) }}"
+                >{% trans %}Edit Post{% endtrans %}</a
+              >
+            {% endif %}
           </div>
           {% endif %}
         </div>
         {{ post.body|safe }} 
-        <!-- Divider-->
-        <hr class="my-4" id="comments"/>
-        <!-- Comments Area -->
-        {{ render_form(form) }}
-        <div class="comment mb-5">
-          <sup>&gt; <a href="https://github.com/timonrieger/blog-boiler-pro/blob/main/.github/demo/comments.png">How to comment</a></sup>
-          <ul class="commentList">
-            {% for comment in comments %}
-            <li>
-              <div class="commenterImage">
-                {% if comment.author.id == ANONYMOUS_ID %}
-                <!-- Use a random Gravatar-like URL for anonymous users -->
-                <img
-                  src="{{ anonymous_gravatar() | gravatar }}"
-                  alt="Anonymous Gravatar"
-                />
-                {% else %}
-                <!-- Use Gravatar URL for logged-in users -->
-                <img src="{{ comment.author.email | gravatar }}" />
-                {% endif %}
-              </div>
-              <div class="commentText">
-                <span class="date sub-text"
-                  >
-                  {{ comment.author.username }}
-                  {% if comment.author.admin %}&#10004;{% endif %}
-                  &#124; {{ comment.create_date }} 
-                  
-                  {% if current_user.id != ANONYMOUS_ID and current_user.id == comment.author_id %}
-                    &#124;
-                    <a
-                      href="{{url_for('show_post', post_title=post.title|lower|replace(' ', '-'), edit_comment=comment.id) }}"
-                      title="Edit comment"
-                      >&#9998;</a
-                    >
-                      {% if current_user.id == SUPER_ID %}
-                        <a
-                          href="{{url_for('delete_comment', post_title=post.title|lower|replace(' ', '-'), comment_id=comment.id) }}"
-                          title="Soft Delete"
-                          >&#x2718;</a
-                        >
-                      {% endif %}
+        {% if not preview %}
+          <!-- Divider-->
+          <hr class="my-4" id="comments"/>
+          <!-- Comments Area -->
+          {% if COMMENT_RICH_EDITOR %}
+            {{ ckeditor.load() }} {{ ckeditor.config(name='comment') }}
+          {% endif %}
+          {{ render_form(form) }}
+          <div class="comment mb-5">
+            {% if SHOW_COMMENT_TUTORIAL %}
+              <sup>&gt; <a href="https://github.com/timonrieger/blog-boiler-pro/blob/main/.github/demo/comments.png">{% trans %}How to comment{% endtrans %}</a></sup>
+            {% endif %}
+            <ul class="commentList">
+              {% for comment in comments %}
+              <li>
+                <div class="commenterImage">
+                  {% if comment.author.id == ANONYMOUS_ID %}
+                  <!-- Use a random Gravatar-like URL for anonymous users -->
+                  <img
+                    src="{{ anonymous_gravatar() | gravatar }}"
+                    alt="{% trans %}Anonymous Gravatar{% endtrans %}"
+                  />
+                  {% else %}
+                  <!-- Use Gravatar URL for logged-in users -->
+                  <img 
+                    src="{{ comment.author.email | gravatar }}" 
+                    alt="Gravatar"
+                  />
                   {% endif %}
-                </span>
-                <p>{{ comment.text|safe }}</p>
-              </div>
-            </li>
-            {% endfor %}
-          </ul>
-        </div>
+                </div>
+                <div class="commentText">
+                  <span class="date sub-text"
+                    >
+                    {{ comment.author.username }}
+                    {% if comment.author.admin %}&#10004;{% endif %}
+                    &#124; 
+                    {% trans trimmed comment_publish_date=comment.create_date|datetimeformat(DATE_FORMAT_LONG) %}
+                      {{ comment_publish_date }}
+                    {% endtrans %}
+                    <em>{% if comment.edited %}({% trans %}edited{% endtrans %}){% endif %}</em>
+                    
+                    {% if current_user.id != ANONYMOUS_ID and current_user.id == comment.author_id %}
+                      &#124;
+                      <a
+                        href="{{url_for('show_post', post_title=post.title|lower|replace(' ', '-'), edit_comment=comment.id) }}"
+                        title="{% trans %}Edit comment{% endtrans %}"
+                        >&#9998;</a
+                      >
+                        {% if current_user.id == SUPER_ID %}
+                          <a
+                            href="{{url_for('delete_comment', post_title=post.title|lower|replace(' ', '-'), comment_id=comment.id) }}"
+                            title="{% trans %}Soft delete{% endtrans %}"
+                            >&#x2718;</a
+                          >
+                        {% endif %}
+                    {% endif %}
+                  </span>
+                  <p>{{ comment.text|safe }}</p>
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
       </div>
     </div>
   </div>
 </article>
 
+<script>
+  function closeTab() {
+      window.close();
+  
+      // If `window.close()` fails (e.g., for tabs not opened via JavaScript), try navigating back
+      if (!window.closed) {
+          window.history.back();
+      }
+  }
+</script>
 {% if scroll_down %}
 <script>
   window.onload = function () {
