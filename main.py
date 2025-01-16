@@ -71,6 +71,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
 
 ckeditor = CKEditor(app)
+
 Bootstrap5(app)
 
 babel = Babel()
@@ -161,7 +162,6 @@ with app.app_context():
 @app.context_processor
 def global_vars():
     return dict(
-        current_url=request.url_root,
         SUPER_ID=SUPER_ID,
         ANONYMOUS_ID=ANONYMOUS_ID,
         DISPLAY_EDIT_DATE=DISPLAY_EDIT_DATE,

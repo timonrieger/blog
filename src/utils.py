@@ -34,7 +34,7 @@ def suggest_img_url(directory):
         suggestion = lazy_gettext("nothing found (use numbered filenames, e.g. 1.jpg)")
     else:
         incremented_number = str(max_value + 1)
-        suggestion = f"{incremented_number}{ext}"
+        suggestion = f"{directory}{incremented_number}{ext}"
     finally:
         return lazy_gettext("Suggestion: %(suggestion)s", suggestion=suggestion)
 
