@@ -82,11 +82,13 @@
             title="{% trans %}Soft delete{% endtrans %}"
             >&#x2718;</a
           >
-          {% endif %} {% if post.is_draft %}<a
-            href="{{ url_for('home', tag='draft', year=request.args.get('year'), author=request.args.get('author'))}}"
+          {% endif %} 
+          {% if post.is_draft %}
+          <a href="{{ url_for('home', tag='draft', year=request.args.get('year'), author=request.args.get('author'))}}"
             ><span class="badge draft-badge">{% trans %}draft{% endtrans %}</span></a
-          >{% endif %} {% set tags_list = post.tags|from_json %} {% for tag in
-          tags_list %}
+          >{% endif %} 
+          {% set tags_list = post.tags|from_json %} 
+          {% for tag in tags_list %}
           <a href="{{ url_for('home', tag=tag, year=request.args.get('year'), author=request.args.get('author'))}}"
             ><span class="badge default-badge">{{ tag }}</span></a
           >
@@ -105,7 +107,8 @@
           href="{{ url_for('home', page=page - 1 ) }}"
           >{% trans %}Newer Posts{% endtrans %}</a
         >
-        {% endif %} {% if page < max_page %}
+        {% endif %} 
+        {% if page < max_page %}
         <a
           class="btn btn-secondary text-uppercase"
           href="{{ url_for('home', page=page + 1 ) }}"
