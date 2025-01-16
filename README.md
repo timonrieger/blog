@@ -176,6 +176,14 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
    - `CHECK_EMAIL`: Whether to check if the email is valid/delivarable (True/False)
    - `IMAGES_FOLDER`: The path to your images folder (path).
    - `POSTS_PER_PAGE`: Number of posts on the home route before displaying pagination buttons (integer).
+   - `COMMENT_RICH_EDITOR`: 
+      - `True`: Uses a rich text editor (Ckeditor) for comments, making it easy for users to format content, but may increase the risk of misuse.  
+      - `False`: Uses a plain text area. HTML is still allowed, but the user experience is simpler.
+   - `SHOW_COMMENT_TUTORIAL` : 
+      Controls whether the `How to comment` tutorial link is shown.  
+      - Links to: [Tutorial Image](/.github/demo/comments.png)  
+      - `True`: Displays the tutorial link.  
+      - `False`: Hides the tutorial link.
    - `BLOG_NAME`: The name of your blog (string).
    - `BLOG_TITLE`: The title that shows up on search machines for the home page (string).
    - `BLOG_DESCRIPTION`: The description that shows up on search machines for the home page (string).

@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField, BooleanField, PasswordField, EmailField
 from wtforms.validators import DataRequired, Optional, Length, Email
 from flask_ckeditor import CKEditorField
-from src.config import DRAFT_ON_DEFAULT, CHECK_EMAIL, IMAGES_FOLDER
+from src.config import DRAFT_ON_DEFAULT, CHECK_EMAIL, IMAGES_FOLDER, COMMENT_RICH_EDITOR
 from src.utils import validate_tags_format, suggest_img_url
 from flask_babel import lazy_gettext
 
@@ -36,5 +36,8 @@ class LoginForm(FlaskForm):
 
 
 class CommentForm(FlaskForm):
-    comment = TextAreaField(lazy_gettext("Comment"), validators=[DataRequired()])
+    if COMMENT_RICH_EDITOR:
+        comment = CKEditorField(lazy_gettext("Comment"), validators=[DataRequired()])
+    else:
+        comment = TextAreaField(lazy_gettext("Comment"), validators=[DataRequired()])
     submit = SubmitField(lazy_gettext("Send it!"))

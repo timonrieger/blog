@@ -79,9 +79,14 @@
           <!-- Divider-->
           <hr class="my-4" id="comments"/>
           <!-- Comments Area -->
+          {% if COMMENT_RICH_EDITOR %}
+            {{ ckeditor.load() }} {{ ckeditor.config(name='comment') }}
+          {% endif %}
           {{ render_form(form) }}
           <div class="comment mb-5">
-            <sup>&gt; <a href="https://github.com/timonrieger/blog-boiler-pro/blob/main/.github/demo/comments.png">{% trans %}How to comment{% endtrans %}</a></sup>
+            {% if SHOW_COMMENT_TUTORIAL %}
+              <sup>&gt; <a href="https://github.com/timonrieger/blog-boiler-pro/blob/main/.github/demo/comments.png">{% trans %}How to comment{% endtrans %}</a></sup>
+            {% endif %}
             <ul class="commentList">
               {% for comment in comments %}
               <li>
