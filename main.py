@@ -53,7 +53,7 @@ from src.config import (
     DISPLAY_EDIT_DATE,
     DISPLAY_READING_TIME,
     TIMEZONE_OFFSET,
-    POSTS_PER_PAGE
+    POSTS_PER_PAGE,
 )
 from jinja2.exceptions import TemplateNotFound
 from jinja2.ext import i18n
@@ -79,7 +79,9 @@ babel.init_app(app, default_locale=LANGUAGE)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_message = lazy_gettext("You need to login to use this feature. Use your own or the anonymous account!")
+login_manager.login_message = lazy_gettext(
+    "You need to login to use this feature. Use your own or the anonymous account!"
+)
 login_manager.login_view = "/login"
 login_manager.login_message_category = "danger"
 
@@ -102,7 +104,8 @@ SUPER_ID = int(
 )  # The super user's ID that can edit other admin's content and delete every comment
 
 app.jinja_env.filters.update(from_json=from_json)
-app.jinja_env.add_extension('jinja2.ext.i18n')
+app.jinja_env.add_extension("jinja2.ext.i18n")
+
 
 class Base(DeclarativeBase):
     pass
@@ -127,7 +130,9 @@ class BlogPost(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
     subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
-    create_date: Mapped[dt] = mapped_column(DateTime, default=get_time(TIMEZONE_OFFSET), nullable=False)
+    create_date: Mapped[dt] = mapped_column(
+        DateTime, default=get_time(TIMEZONE_OFFSET), nullable=False
+    )
     edit_date: Mapped[dt] = mapped_column(DateTime, nullable=True)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
@@ -146,13 +151,17 @@ class BlogComment(db.Model):
     __tablename__ = "comment"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     text: Mapped[str] = mapped_column(String, nullable=False)
-    create_date: Mapped[dt] = mapped_column(DateTime, default=get_time(TIMEZONE_OFFSET), nullable=False)
+    create_date: Mapped[dt] = mapped_column(
+        DateTime, default=get_time(TIMEZONE_OFFSET), nullable=False
+    )
     edited: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # Relationships
     author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("user.id"))
     post_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("post.id"))
-    parent_post: Mapped["BlogPost"] = relationship("BlogPost", back_populates="comments")
+    parent_post: Mapped["BlogPost"] = relationship(
+        "BlogPost", back_populates="comments"
+    )
 
 
 with app.app_context():
@@ -187,7 +196,9 @@ def admin_required(f):
         user = User.query.filter_by(id=current_user.id).first()
         if not user.admin:
             flash(
-                gettext("You do not have the necessary permissions to use this feature. Admin access is required!"),
+                gettext(
+                    "You do not have the necessary permissions to use this feature. Admin access is required!"
+                ),
                 "danger",
             )
             return redirect(url_for("home"))
@@ -228,17 +239,33 @@ def home():
         filters.append(partial(filter_posts_by_year, year))
     if author:
         filters.append(partial(filter_posts_by_author, author, User))
-    
+
     filters.append(partial(hide_drafts, current_user, SUPER_ID))
 
     filtered_posts = result
 
     for filter_func in filters:
-        filtered_posts = [post for post in filtered_posts if post in filter_func(result)]
+        filtered_posts = [
+            post for post in filtered_posts if post in filter_func(result)
+        ]
 
     posts = add_author(filtered_posts, User)
 
-    return render_template("index.html", all_posts=posts, page=page, max_page=max_page, filter=[(tag, gettext("tag")), (year, gettext("year")), (author, gettext("author"))] if tag or year or author else [])
+    return render_template(
+        "index.html",
+        all_posts=posts,
+        page=page,
+        max_page=max_page,
+        filter=(
+            [
+                (tag, gettext("tag")),
+                (year, gettext("year")),
+                (author, gettext("author")),
+            ]
+            if tag or year or author
+            else []
+        ),
+    )
 
 
 @app.route("/<post_title>", methods=["GET", "POST"])
@@ -246,9 +273,9 @@ def show_post(post_title):
     post = find_post(post_title, BlogPost, User)
     result = (
         db.session.execute(
-            db.select(BlogComment).where(
-                BlogComment.post_id == post.id, BlogComment.deleted == False
-            ).order_by(BlogComment.id.asc())
+            db.select(BlogComment)
+            .where(BlogComment.post_id == post.id, BlogComment.deleted == False)
+            .order_by(BlogComment.id.asc())
         )
         .scalars()
         .all()
@@ -263,7 +290,7 @@ def show_post(post_title):
         if not comment or comment.deleted:
             abort(404)
         if comment.author_id != current_user.id:
-            flash(gettext("You are not the author of the comment!"), "danger") 
+            flash(gettext("You are not the author of the comment!"), "danger")
             return redirect(url_for("show_post", post_title=post_title, commented=True))
         comment_form = CommentForm(comment=comment.text)
         if comment_form.validate_on_submit():
@@ -272,7 +299,7 @@ def show_post(post_title):
             db.session.commit()
             flash(gettext("Commment successfully updated!"), "success")
             return redirect(url_for("show_post", post_title=post_title, commented=True))
-    
+
     else:
         comment_form = CommentForm()
         if comment_form.validate_on_submit():
@@ -285,7 +312,9 @@ def show_post(post_title):
                 db.session.add(new_comment)
                 db.session.commit()
                 flash(gettext("Commment successfully posted!"), "success")
-                return redirect(url_for("show_post", post_title=post_title, commented=True))
+                return redirect(
+                    url_for("show_post", post_title=post_title, commented=True)
+                )
             else:
                 return login_manager.unauthorized()
 
@@ -317,7 +346,9 @@ def new_post():
             img_url=form.img_url.data,
             author_id=current_user.id,
             is_draft=form.is_draft.data,
-            tags=json.dumps([tag.strip() for tag in form.tags.data.split(',')] if not "" else [])
+            tags=json.dumps(
+                [tag.strip() for tag in form.tags.data.split(",")] if not "" else []
+            ),
         )
         if form.publish.data:
             db.session.add(new_post)
@@ -345,11 +376,16 @@ def edit_post(post_title):
     post = find_post(post_title, BlogPost, User)
     if not post:
         abort(404)
-    
+
     unique_tags = get_unique_tags(BlogPost)
 
     edit_form = CreatePostForm(
-        title=post.title, subtitle=post.subtitle, img_url=post.img_url, body=post.body, is_draft=post.is_draft, tags=', '.join((json.loads(post.tags)))
+        title=post.title,
+        subtitle=post.subtitle,
+        img_url=post.img_url,
+        body=post.body,
+        is_draft=post.is_draft,
+        tags=", ".join((json.loads(post.tags))),
     )
     edit_form.tags.description = get_tags_description(unique_tags)
     if edit_form.validate_on_submit():
@@ -358,10 +394,16 @@ def edit_post(post_title):
         post.img_url = edit_form.img_url.data
         if post.is_draft and not edit_form.is_draft.data:
             post.create_date = get_time(TIMEZONE_OFFSET)
-        post.edit_date = get_time(TIMEZONE_OFFSET) if post.body != edit_form.body.data and not post.is_draft else None
+        post.edit_date = (
+            get_time(TIMEZONE_OFFSET)
+            if post.body != edit_form.body.data and not post.is_draft
+            else None
+        )
         post.body = edit_form.body.data
         post.is_draft = edit_form.is_draft.data
-        post.tags=json.dumps([tag.strip() for tag in edit_form.tags.data.split(',')] if not "" else [])
+        post.tags = json.dumps(
+            [tag.strip() for tag in edit_form.tags.data.split(",")] if not "" else []
+        )
         if edit_form.publish.data:
             db.session.commit()
             flash(gettext("Post successfully updated!"), "success")
@@ -460,7 +502,7 @@ def show_author(author):
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("home"))
-    
+
     form = LoginForm()
     redirect_to = request.args.get("next")
 
@@ -473,7 +515,10 @@ def login():
             return redirect(url_for("register"))
         if check_password_hash(user.password, password):
             login_user(user)
-            flash(gettext("Login successful, %(username)s!", username=user.username), "success")
+            flash(
+                gettext("Login successful, %(username)s!", username=user.username),
+                "success",
+            )
             if redirect_to:
                 return redirect(redirect_to)
             return redirect(url_for("home"))
@@ -484,7 +529,8 @@ def login():
         user = User.query.filter_by(id=ANONYMOUS_ID).first()
         login_user(user)
         flash(
-            gettext("Logged in as an anonymous user. Start commenting anonymously!"), "success"
+            gettext("Logged in as an anonymous user. Start commenting anonymously!"),
+            "success",
         )
         if redirect_to:
             return redirect(redirect_to)
@@ -496,8 +542,8 @@ def login():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for("home")) 
-    
+        return redirect(url_for("home"))
+
     form = RegisterForm()
 
     if form.validate_on_submit():
@@ -518,7 +564,13 @@ def register():
             )
             db.session.add(new_user)
             db.session.commit()
-            flash(gettext("Registration and login successful, %(username)s!", username=new_user.username), "success")
+            flash(
+                gettext(
+                    "Registration and login successful, %(username)s!",
+                    username=new_user.username,
+                ),
+                "success",
+            )
 
             login_user(new_user)
             return redirect(url_for("home"))
@@ -556,7 +608,8 @@ def rss_feed():
     # Generate RSS feed
     rss_items = []
     for post in posts:
-        rss_items.append(f"""
+        rss_items.append(
+            f"""
         <item>
             <title>{post.title}</title>
             <guid isPermaLink="true">{ url_for('show_post', post_title=post.title.lower().replace(' ', '-'), _external=True) }</guid>
@@ -564,7 +617,8 @@ def rss_feed():
             <pubDate>{post.create_date.strftime("%d. %B %Y")}</pubDate>
             <dc:creator>{post.author.username}</dc:creator>
         </item>
-        """)
+        """
+        )
 
     rss_feed = f"""<?xml version="1.0" encoding="UTF-8" ?>
     <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
@@ -591,6 +645,7 @@ def static_from_root():
 def rss_redirect():
     return redirect(url_for("rss_feed"))
 
+
 @app.route("/feed")
 def feed_redirect():
     return redirect(url_for("rss_feed"))
@@ -603,7 +658,9 @@ def not_found(e):
 
 @app.after_request
 def add_header(response):
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+    response.headers["Strict-Transport-Security"] = (
+        "max-age=31536000; includeSubDomains; preload"
+    )
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
@@ -621,7 +678,7 @@ def add_etag(response):
         return response
 
     # Exclude static from invalidation
-    if request.path.startswith('/static/'):
+    if request.path.startswith("/static/"):
         return response
 
     content = response.get_data(as_text=True)

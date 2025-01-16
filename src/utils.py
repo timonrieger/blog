@@ -9,18 +9,18 @@ from datetime import datetime, timezone, timedelta
 
 
 def get_time(timezone_offset):
-    '''Return current time for the specified timezone.'''
+    """Return current time for the specified timezone."""
     tzinfo = timezone(timedelta(hours=timezone_offset))
     return datetime.now(tz=tzinfo)
 
 
 def suggest_img_url(directory):
-    '''Suggest the relative url for the next post's image.'''
+    """Suggest the relative url for the next post's image."""
     try:
         files = os.listdir(directory)
         max_value = -1
         ext = ""
-        num_pattern = re.compile(r'\d+')
+        num_pattern = re.compile(r"\d+")
 
         for file in files:
             match = num_pattern.search(file)
@@ -84,38 +84,39 @@ def calculate_reading_time(text, words_per_minute=200):
 
 
 def from_json(json_string):
-    '''Deserialize (a str, bytes or bytearray instance containing a JSON document) to a Python object. Used as and '''
+    """Deserialize (a str, bytes or bytearray instance containing a JSON document) to a Python object. Used as and"""
     return json.loads(json_string)
 
 
 def validate_tags_format(form, tags):
     """
     Validates that the tags are comma-separated and do not include any whitespaces.
-    
+
     :param tags: A string containing comma-separated tags
     :return: A list of valid tags if the format is correct, otherwise raises a ValueError
     """
     if form.tags.data == "":
         return []
-    
-    tags_list = [tag.strip() for tag in form.tags.data.split(',')]
-    
+
+    tags_list = [tag.strip() for tag in form.tags.data.split(",")]
+
     if any(not tag for tag in tags_list):
         raise ValueError("Tags must be separated by commas and cannot be empty.")
-    
+
     return tags_list
 
+
 def get_tags_description(tags):
-    '''Add description to tag field.'''
+    """Add description to tag field."""
     if tags and tags != [""]:
-        suggestion = ', '.join(tags)
+        suggestion = ", ".join(tags)
     else:
         suggestion = "nothing found (add tags first, e.g. travel, food, books)"
     return lazy_gettext("Suggestion: %(suggestion)s", suggestion=suggestion)
 
 
 def get_unique_tags(post_model):
-    '''Sorted tags by occurence.'''
+    """Sorted tags by occurence."""
     all_tags = [json.loads(post.tags) for post in post_model.query.all()]
     unique_tags = set(tag for tags in all_tags for tag in tags)
     tag_counts = Counter(tag for tags in all_tags for tag in tags)
@@ -123,7 +124,7 @@ def get_unique_tags(post_model):
 
 
 def filter_posts_by_tag(tag, current_user, posts):
-    '''Filter by tag and draft posts if the user is an admin'''
+    """Filter by tag and draft posts if the user is an admin"""
     if tag.lower() == "draft" and current_user.is_authenticated and current_user.admin:
         return [post for post in posts if post.is_draft]
     else:
@@ -131,19 +132,25 @@ def filter_posts_by_tag(tag, current_user, posts):
 
 
 def filter_posts_by_year(year, posts):
-    '''Filter by the year the post was created.'''
+    """Filter by the year the post was created."""
     return [post for post in posts if year == str(post.create_date.strftime("%Y"))]
 
 
 def hide_drafts(current_user, SUPER_ID, posts):
-    '''Filter out drafts if the user is not the author or the super admin'''
+    """Filter out drafts if the user is not the author or the super admin"""
     if current_user.is_authenticated:
-        return [post for post in posts if not post.is_draft or (post.is_draft and post.author_id == current_user.id) or current_user.id == SUPER_ID]
+        return [
+            post
+            for post in posts
+            if not post.is_draft
+            or (post.is_draft and post.author_id == current_user.id)
+            or current_user.id == SUPER_ID
+        ]
     else:
         return [post for post in posts if not post.is_draft]
 
 
 def filter_posts_by_author(author, user_model, posts):
-    '''Filter by the post author.'''
+    """Filter by the post author."""
     author_id = user_model.query.filter_by(username=author).first().id
     return [post for post in posts if author_id == post.author_id]
