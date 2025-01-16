@@ -117,7 +117,7 @@ db.init_app(app)
 
 
 class User(db.Model, UserMixin):
-    __tablename__ = "user"
+    __tablename__ = "users"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[str] = mapped_column(String(150), unique=True)
     password: Mapped[str] = mapped_column(String(150))
@@ -126,7 +126,7 @@ class User(db.Model, UserMixin):
 
 
 class BlogPost(db.Model):
-    __tablename__ = "post"
+    __tablename__ = "blog_posts"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
     subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
@@ -141,14 +141,14 @@ class BlogPost(db.Model):
     tags: Mapped[str] = mapped_column(String, default=json.dumps([]))
 
     # Relationships
-    author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("user.id"))
+    author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("users.id"))
     comments: Mapped[List["BlogComment"]] = relationship(
         "BlogComment", back_populates="parent_post"
     )
 
 
 class BlogComment(db.Model):
-    __tablename__ = "comment"
+    __tablename__ = "blog_comments"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     text: Mapped[str] = mapped_column(String, nullable=False)
     create_date: Mapped[dt] = mapped_column(
@@ -157,8 +157,8 @@ class BlogComment(db.Model):
     edited: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # Relationships
-    author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("user.id"))
-    post_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("post.id"))
+    author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("users.id"))
+    post_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("blog_posts.id"))
     parent_post: Mapped["BlogPost"] = relationship(
         "BlogPost", back_populates="comments"
     )
