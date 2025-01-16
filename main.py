@@ -259,6 +259,7 @@ def show_post(post_title):
                     text=comment_form.comment.data,
                     parent_post=db.get_or_404(BlogPost, post.id),
                     author_id=current_user.id,
+                    create_date=get_time(TIMEZONE_OFFSET)
                 )
                 db.session.add(new_comment)
                 db.session.commit()
@@ -297,6 +298,7 @@ def new_post():
             img_url=form.img_url.data,
             author_id=current_user.id,
             is_draft=form.is_draft.data,
+            create_date=get_time(TIMEZONE_OFFSET),
             tags=json.dumps(
                 [tag.strip() for tag in form.tags.data.split(",")] if not "" else []
             ),
@@ -573,6 +575,7 @@ def rss_feed():
 @app.route("/robots.txt")
 def static_from_root():
     return send_from_directory(app.static_folder, request.path[1:])
+
 
 
 @app.route("/rss")
