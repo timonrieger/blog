@@ -319,9 +319,22 @@ def new_post():
             is_draft=form.is_draft.data,
             tags=json.dumps([tag.strip() for tag in form.tags.data.split(',')] if not "" else [])
         )
-        db.session.add(new_post)
-        db.session.commit()
-        return redirect(url_for("home"))
+        if form.publish.data:
+            db.session.add(new_post)
+            db.session.commit()
+            if new_post.is_draft:
+                flash(gettext("Post saved as draft!"), "success")
+            else:
+                flash(gettext("Post published!"), "success")
+            return redirect(url_for("home"))
+        elif form.preview.data:
+            flash(gettext("You are in preview mode!"), "success")
+            return render_template(
+                "post.html",
+                preview=True,
+                post=add_author([new_post], User)[0],
+                calculate_reading_time=calculate_reading_time,
+            )
     return render_template("make-post.html", form=form)
 
 
