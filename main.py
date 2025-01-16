@@ -404,7 +404,7 @@ def register():
             "email": email,
             "password": password,
             "username": username,
-            "then": "https:blog.timonrieger.de/login"
+            "then": f"{request.url_root}/login"
         }
         response = requests.post(f"{AUTH_URL}/register", json=data)
         flash(response.json()['message'], "success") if response.status_code == 200 else flash(response.json()['message'], "danger")
