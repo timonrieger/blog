@@ -172,7 +172,7 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
    - `DATE_FORMAT`: The format for dates (used everywhere except comments) (valid datetime format).
    - `DATE_FORMAT_LONG`: The format for dates (used in comments) (valid datetime format).
 
-      => [Datetime Format Guide](https://www.pythonmorsels.com/strptime/)
+      => [Datetime Format Guide](https://www.pythonmorsels.com/strptime/) and [Date Format Patterns](https://unicode.org/reports/tr35/tr35-dates.html#date-format-patterns)
    - `CHECK_EMAIL`: Whether to check if the email is valid/delivarable (True/False)
    - `IMAGES_FOLDER`: The path to your images folder (path).
    - `POSTS_PER_PAGE`: Number of posts on the home route before displaying pagination buttons (integer).
@@ -197,7 +197,6 @@ The blog currently supports **English** (`en`) and **German** (`de`).
 When setting up your blog, you can define the default language for your application. The intent is not for users to switch between languages dynamically but to ensure that application texts align with the language you are writing in.
 
 ### Contribute a New Language
-
 If you'd like to contribute a new language you're fluent in, feel free to submit a Pull Request (PR) containing the translated `message.po` file for that language. Your contribution is highly appreciated! Note that there are approximately **75 phrases/sentences** to translate, making it a manageable task.
 
 ### Using a Different Language Without Translating
