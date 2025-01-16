@@ -28,8 +28,35 @@ from functools import partial, wraps
 from src.forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from jinja2.exceptions import TemplateNotFound
 from database import db, create_all, User as UserModel, BlogComment, BlogPost
-from src.utils import add_author, filter_posts_by_author, filter_posts_by_tag, filter_posts_by_year, find_post, from_json, get_tags_description, get_time, get_unique_tags, hide_drafts, parse_title, random_gravatar_url, calculate_reading_time
-from src.config import BLOG_DESCRIPTION, BLOG_NAME, BLOG_TITLE, COMMENT_RICH_EDITOR, DATE_FORMAT, DATE_FORMAT_LONG, LANGUAGE, DISPLAY_EDIT_DATE, DISPLAY_READING_TIME, SHOW_COMMENT_TUTORIAL, TIMEZONE_OFFSET
+from src.utils import (
+    add_author,
+    filter_posts_by_author,
+    filter_posts_by_tag,
+    filter_posts_by_year,
+    find_post,
+    from_json,
+    get_tags_description,
+    get_time,
+    get_unique_tags,
+    hide_drafts,
+    parse_title,
+    random_gravatar_url,
+    calculate_reading_time,
+)
+from src.config import (
+    BLOG_DESCRIPTION,
+    BLOG_NAME,
+    BLOG_TITLE,
+    COMMENT_RICH_EDITOR,
+    DATE_FORMAT,
+    DATE_FORMAT_LONG,
+    LANGUAGE,
+    DISPLAY_EDIT_DATE,
+    DISPLAY_READING_TIME,
+    POSTS_PER_PAGE,
+    SHOW_COMMENT_TUTORIAL,
+    TIMEZONE_OFFSET,
+)
 import requests
 import dotenv
 import os
@@ -79,8 +106,10 @@ AUTH_URL = os.getenv("AUTH_URL")
 ANONYMOUS_ID = int(os.getenv("ANONYMOUS_ID"))
 SUPER_ID = int(os.getenv("SUPER_ID"))
 
+
 class User(UserMixin, UserModel):
     pass
+
 
 app.jinja_env.filters.update(from_json=from_json)
 
@@ -432,18 +461,15 @@ def login():
         email = form.email.data
         password = form.password.data
         user = User.query.filter_by(email=email).first()
-        data = {
-            "email": email,
-            "password": password
-        }
+        data = {"email": email, "password": password}
         response = requests.post(url=f"{AUTH_URL}/login", json=data)
         if response.status_code == 200:
-            flash(response.json()['message'], "success")
+            flash(response.json()["message"], "success")
             login_user(user)
             if redirect_to:
                 return redirect(redirect_to)
             return redirect(url_for("home"))
-        flash(response.json()['message'], "danger")
+        flash(response.json()["message"], "danger")
 
     if request.args.get("u") == str(ANONYMOUS_ID):
         user = User.query.filter_by(id=ANONYMOUS_ID).first()
@@ -474,11 +500,15 @@ def register():
             "email": email,
             "password": password,
             "username": username,
-            "then": f"{request.url_root}/login"
+            "then": f"{request.url_root}/login",
         }
         response = requests.post(f"{AUTH_URL}/register", json=data)
-        flash(response.json()['message'], "success") if response.status_code == 200 else flash(response.json()['message'], "danger")
-        
+        (
+            flash(response.json()["message"], "success")
+            if response.status_code == 200
+            else flash(response.json()["message"], "danger")
+        )
+
     return render_template("register.html", form=form)
 
 
@@ -548,6 +578,7 @@ def static_from_root():
 @app.route("/rss")
 def rss_redirect():
     return redirect(url_for("rss_feed"))
+
 
 @app.route("/feed")
 def feed_redirect():
