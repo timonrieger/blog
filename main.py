@@ -1,6 +1,7 @@
 from datetime import datetime as dt
 import hashlib
 import json
+import random
 from flask import (
     Flask,
     Response,
@@ -39,6 +40,7 @@ from src.utils import (
     get_time,
     get_unique_tags,
     hide_drafts,
+    humanize_time,
     parse_title,
     random_gravatar_url,
     calculate_reading_time,
@@ -48,8 +50,9 @@ from src.config import (
     BLOG_NAME,
     BLOG_TITLE,
     COMMENT_RICH_EDITOR,
+    NR_RELATED_POSTS,
+    SHOW_COMMENT_TUTORIAL,
     DATE_FORMAT,
-    DATE_FORMAT_LONG,
     LANGUAGE,
     DISPLAY_EDIT_DATE,
     DISPLAY_READING_TIME,
@@ -95,29 +98,20 @@ gravatar = Gravatar(
     base_url=None,
 )
 
-ANONYMOUS_ID = int(
-    os.getenv("ANONYMOUS_ID")
-)  # Register a dummy account that users can use for commenting anonymously with registering themselves
-SUPER_ID = int(
-    os.getenv("SUPER_ID")
-)  # The super user's ID that can edit other admin's content and delete every comment
-
 AUTH_URL = os.getenv("AUTH_URL")
 ANONYMOUS_ID = int(os.getenv("ANONYMOUS_ID"))
 SUPER_ID = int(os.getenv("SUPER_ID"))
+
+app.jinja_env.filters.update(from_json=from_json, humanize_time=humanize_time)
+app.jinja_env.add_extension("jinja2.ext.i18n")
 
 
 class User(UserMixin, UserModel):
     pass
 
 
-app.jinja_env.filters.update(from_json=from_json)
-
 with app.app_context():
     create_all(app)
-
-app.jinja_env.filters.update(from_json=from_json)
-app.jinja_env.add_extension("jinja2.ext.i18n")
 
 
 @app.context_processor
@@ -128,7 +122,6 @@ def global_vars():
         DISPLAY_EDIT_DATE=DISPLAY_EDIT_DATE,
         DISPLAY_READING_TIME=DISPLAY_READING_TIME,
         DATE_FORMAT=DATE_FORMAT,
-        DATE_FORMAT_LONG=DATE_FORMAT_LONG,
         COMMENT_RICH_EDITOR=COMMENT_RICH_EDITOR,
         SHOW_COMMENT_TUTORIAL=SHOW_COMMENT_TUTORIAL,
         BLOG_NAME=BLOG_NAME,
@@ -222,7 +215,7 @@ def home():
 @app.route("/<post_title>", methods=["GET", "POST"])
 def show_post(post_title):
     post = find_post(post_title, BlogPost, User)
-    result = (
+    result_comments = (
         db.session.execute(
             db.select(BlogComment)
             .where(BlogComment.post_id == post.id, BlogComment.deleted == False)
@@ -231,7 +224,7 @@ def show_post(post_title):
         .scalars()
         .all()
     )
-    comments = add_author(result, User)[::-1]
+    comments = add_author(result_comments, User)[::-1]
     edit_comment = request.args.get("edit_comment")
     if edit_comment:
         if not current_user.is_authenticated or current_user.id == ANONYMOUS_ID:
@@ -270,9 +263,26 @@ def show_post(post_title):
             else:
                 return login_manager.unauthorized()
 
+    result_posts = (
+        db.session.execute(
+            db.select(BlogPost)
+            .where(BlogPost.deleted == False)
+            .where(BlogPost.is_draft == False)
+            .where(BlogPost.id != post.id)
+        )
+        .scalars()
+        .all()
+    )
+    similar_posts = []
+    for tag in from_json(post.tags):
+        similar_posts += filter_posts_by_tag(tag, current_user, result_posts)
+
+    nr_sample_posts = min([NR_RELATED_POSTS, len(similar_posts)])
+
     return render_template(
         "post.html",
         post=post,
+        related_posts=add_author(random.sample(similar_posts, nr_sample_posts), User),
         comments=comments,
         form=comment_form,
         anonymous_gravatar=random_gravatar_url,
@@ -346,9 +356,9 @@ def edit_post(post_title):
         post.subtitle = edit_form.subtitle.data
         post.img_url = edit_form.img_url.data
         if post.is_draft and not edit_form.is_draft.data:
-            post.create_date = get_time(TIMEZONE_OFFSET)
+            post.create_date = get_time()
         post.edit_date = (
-            get_time(TIMEZONE_OFFSET)
+            get_time()
             if post.body != edit_form.body.data and not post.is_draft
             else None
         )
