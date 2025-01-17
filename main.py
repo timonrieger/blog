@@ -37,6 +37,7 @@ from src.utils import (
     get_time,
     get_unique_tags,
     hide_drafts,
+    humanize_time,
     parse_title,
     random_gravatar_url,
     calculate_reading_time,
@@ -48,11 +49,9 @@ from src.config import (
     COMMENT_RICH_EDITOR,
     SHOW_COMMENT_TUTORIAL,
     DATE_FORMAT,
-    DATE_FORMAT_LONG,
     LANGUAGE,
     DISPLAY_EDIT_DATE,
     DISPLAY_READING_TIME,
-    TIMEZONE_OFFSET,
     POSTS_PER_PAGE,
 )
 from jinja2.exceptions import TemplateNotFound
@@ -103,7 +102,7 @@ SUPER_ID = int(
     os.getenv("SUPER_ID")
 )  # The super user's ID that can edit other admin's content and delete every comment
 
-app.jinja_env.filters.update(from_json=from_json)
+app.jinja_env.filters.update(from_json=from_json, humanize_time=humanize_time)
 app.jinja_env.add_extension("jinja2.ext.i18n")
 
 
@@ -111,7 +110,7 @@ class Base(DeclarativeBase):
     pass
 
 
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DB_URI", "sqlite:///blog.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///blog.db"#os.environ.get("DB_URI", "sqlite:///blog.db")
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
 
@@ -131,7 +130,7 @@ class BlogPost(db.Model):
     title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
     subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
     create_date: Mapped[dt] = mapped_column(
-        DateTime, default=get_time(TIMEZONE_OFFSET), nullable=False
+        DateTime, default=get_time(), nullable=False
     )
     edit_date: Mapped[dt] = mapped_column(DateTime, nullable=True)
     body: Mapped[str] = mapped_column(Text, nullable=False)
@@ -152,7 +151,7 @@ class BlogComment(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     text: Mapped[str] = mapped_column(String, nullable=False)
     create_date: Mapped[dt] = mapped_column(
-        DateTime, default=get_time(TIMEZONE_OFFSET), nullable=False
+        DateTime, default=get_time(), nullable=False
     )
     edited: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -166,6 +165,7 @@ class BlogComment(db.Model):
 
 with app.app_context():
     db.create_all()
+    print(db)
 
 
 @app.context_processor
@@ -176,7 +176,6 @@ def global_vars():
         DISPLAY_EDIT_DATE=DISPLAY_EDIT_DATE,
         DISPLAY_READING_TIME=DISPLAY_READING_TIME,
         DATE_FORMAT=DATE_FORMAT,
-        DATE_FORMAT_LONG=DATE_FORMAT_LONG,
         COMMENT_RICH_EDITOR=COMMENT_RICH_EDITOR,
         SHOW_COMMENT_TUTORIAL=SHOW_COMMENT_TUTORIAL,
         BLOG_NAME=BLOG_NAME,
@@ -393,9 +392,9 @@ def edit_post(post_title):
         post.subtitle = edit_form.subtitle.data
         post.img_url = edit_form.img_url.data
         if post.is_draft and not edit_form.is_draft.data:
-            post.create_date = get_time(TIMEZONE_OFFSET)
+            post.create_date = get_time()
         post.edit_date = (
-            get_time(TIMEZONE_OFFSET)
+            get_time()
             if post.body != edit_form.body.data and not post.is_draft
             else None
         )

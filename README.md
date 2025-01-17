@@ -163,14 +163,13 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
 4. **Edit author pages**  
    Edit the contents in the author files in `templates/authors/`. Change the name of the file to the username you registered as well as the profile picture in `static/assets/img/`, e.g. John Doe > `john-doe.html` and `john-doe.jpg`
 
-5. **Update the `src/config.py` configuration file
+5. **Update the `src/config.py` configuration file**
    - `LANGUAGE`: Your blog should be in a different language than English? <a href="#multi-language-support">start here</a>
    - `DISPLAY_READING_TIME`: Show the approximate reading time on each post (True/False).
    - `DISPLAY_EDIT_DATE`: Show the edit date if you edited the post body (True/False).
    - `DRAFT_ON_DEFAULT`: Sets the checkbox to publish as draft in the post form on default (True/False).
    - `TIMEZONE_OFFSET`: Set the offset to UTC (e.g. for New York -5) (± number)
    - `DATE_FORMAT`: The format for dates (used everywhere except comments) (valid datetime format).
-   - `DATE_FORMAT_LONG`: The format for dates (used in comments) (valid datetime format).
 
       => [Datetime Format Guide](https://www.pythonmorsels.com/strptime/) and [Date Format Patterns](https://unicode.org/reports/tr35/tr35-dates.html#date-format-patterns)
    - `CHECK_EMAIL`: Whether to check if the email is valid/delivarable (True/False)

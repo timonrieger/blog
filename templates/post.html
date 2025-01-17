@@ -111,7 +111,7 @@
                     {{ comment.author.username }}
                     {% if comment.author.admin %}&#10004;{% endif %}
                     &#124; 
-                    {% trans trimmed comment_publish_date=comment.create_date|datetimeformat(DATE_FORMAT_LONG) %}
+                    {% trans trimmed comment_publish_date=comment.create_date|humanize_time %}
                       {{ comment_publish_date }}
                     {% endtrans %}
                     <em>{% if comment.edited %}({% trans %}edited{% endtrans %}){% endif %}</em>

@@ -3,12 +3,14 @@ import json
 import os
 import hashlib
 import re
+from src.config import LANGUAGE, TIMEZONE_OFFSET
 from flask_babel import lazy_gettext
 from werkzeug.exceptions import NotFound
 from datetime import datetime, timezone, timedelta
+import humanize
 
 
-def get_time(timezone_offset):
+def get_time(timezone_offset=TIMEZONE_OFFSET):
     """Return current time for the specified timezone."""
     tzinfo = timezone(timedelta(hours=timezone_offset))
     return datetime.now(tz=tzinfo)
@@ -86,6 +88,18 @@ def calculate_reading_time(text, words_per_minute=200):
 def from_json(json_string):
     """Deserialize (a str, bytes or bytearray instance containing a JSON document) to a Python object. Used as and"""
     return json.loads(json_string)
+
+_LOCAL_MAPPING = {
+    "de": "de_DE",
+}
+
+def humanize_time(date, language=LANGUAGE, timezone_offset=TIMEZONE_OFFSET):
+    lang = _LOCAL_MAPPING.get(language, None)
+    humanize.i18n.activate(lang)
+    tzinfo = timezone(timedelta(hours=timezone_offset))
+    input_date = date.replace(tzinfo=timezone.utc).astimezone(tzinfo)
+    current = datetime.now(tz=tzinfo)
+    return humanize.naturaltime(current - input_date)
 
 
 def validate_tags_format(form, tags):
