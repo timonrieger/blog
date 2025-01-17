@@ -965,6 +965,16 @@ header.masthead .post-heading .meta a {
   font-weight: 300;
   margin-bottom: 0.625rem;
 }
+.post-preview.lite > a > .post-title {
+  font-size: 1.875rem;
+  margin-bottom: 0.625rem;
+  font-weight: 400;
+}
+
+.post-preview.lite > a > .post-subtitle {
+  font-weight: 150;
+  margin-bottom: 0.625rem;
+}
 .post-preview > .post-meta {
   font-size: 1.125rem;
   font-style: italic;

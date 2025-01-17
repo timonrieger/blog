@@ -1,6 +1,7 @@
 from datetime import datetime as dt
 import hashlib
 import json
+import random
 from flask import (
     Flask,
     Response,
@@ -47,6 +48,7 @@ from src.config import (
     BLOG_TITLE,
     BLOG_DESCRIPTION,
     COMMENT_RICH_EDITOR,
+    NR_RELATED_POSTS,
     SHOW_COMMENT_TUTORIAL,
     DATE_FORMAT,
     LANGUAGE,
@@ -270,7 +272,7 @@ def home():
 @app.route("/<post_title>", methods=["GET", "POST"])
 def show_post(post_title):
     post = find_post(post_title, BlogPost, User)
-    result = (
+    result_comments = (
         db.session.execute(
             db.select(BlogComment)
             .where(BlogComment.post_id == post.id, BlogComment.deleted == False)
@@ -279,7 +281,7 @@ def show_post(post_title):
         .scalars()
         .all()
     )
-    comments = add_author(result, User)[::-1]
+    comments = add_author(result_comments, User)[::-1]
     edit_comment = request.args.get("edit_comment")
     if edit_comment:
         if not current_user.is_authenticated or current_user.id == ANONYMOUS_ID:
@@ -317,9 +319,24 @@ def show_post(post_title):
             else:
                 return login_manager.unauthorized()
 
+    result_posts = (
+        db.session.execute(
+            db.select(BlogPost)
+            .where(BlogPost.deleted == False)
+            .where(BlogPost.is_draft == False)
+            .where(BlogPost.id != post.id)
+        )
+        .scalars()
+        .all()
+    )
+    similar_posts = []
+    for tag in from_json(post.tags):
+        similar_posts += filter_posts_by_tag(tag, current_user, result_posts)
+
     return render_template(
         "post.html",
         post=post,
+        related_posts=add_author(random.sample(similar_posts, NR_RELATED_POSTS), User),
         comments=comments,
         form=comment_form,
         anonymous_gravatar=random_gravatar_url,

@@ -78,6 +78,19 @@
         {% if not preview %}
           <!-- Divider-->
           <hr class="my-4" id="comments"/>
+          <!-- Related Posts -->
+          {% for post in related_posts %}
+          <div class="post-preview lite">
+            <a
+              href="{{ url_for('show_post', post_title=post.title|lower|replace(' ', '-')) }}"
+            >
+              <h2 class="post-title">{{ post.title }}</h2>
+              <h3 class="post-subtitle">{{ post.subtitle }}</h3>
+            </a>
+          </div>
+          {% endfor %}
+          <!-- Divider-->
+          <hr class="my-4" id="comments"/>
           <!-- Comments Area -->
           {% if COMMENT_RICH_EDITOR %}
             {{ ckeditor.load() }} {{ ckeditor.config(name='comment') }}
