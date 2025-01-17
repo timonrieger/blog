@@ -76,8 +76,10 @@
         </div>
         {{ post.body|safe }} 
         {% if not preview %}
+        {% if related_posts%}
           <!-- Divider-->
           <hr class="my-4" id="comments"/>
+        {% endif %}
           <!-- Related Posts -->
           {% for post in related_posts %}
           <div class="post-preview lite">

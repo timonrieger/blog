@@ -167,7 +167,6 @@ class BlogComment(db.Model):
 
 with app.app_context():
     db.create_all()
-    print(db)
 
 
 @app.context_processor
@@ -333,10 +332,12 @@ def show_post(post_title):
     for tag in from_json(post.tags):
         similar_posts += filter_posts_by_tag(tag, current_user, result_posts)
 
+    nr_sample_posts = min([NR_RELATED_POSTS, len(similar_posts)])
+
     return render_template(
         "post.html",
         post=post,
-        related_posts=add_author(random.sample(similar_posts, NR_RELATED_POSTS), User),
+        related_posts=add_author(random.sample(similar_posts, nr_sample_posts), User),
         comments=comments,
         form=comment_form,
         anonymous_gravatar=random_gravatar_url,
