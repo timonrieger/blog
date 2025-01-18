@@ -12,11 +12,6 @@ from werkzeug.security import generate_password_hash
 
 
 # JINJA FILTER
-def from_json(json_string):
-    """Deserialize (a str, bytes or bytearray instance containing a JSON document) to a Python object. Used as and"""
-    return json.loads(json_string)
-
-
 _LOCAL_MAPPING = {
     "de": "de_DE",
 }
@@ -84,31 +79,6 @@ def filter_posts_by_tag(tag, current_user, posts):
         return [post for post in posts if post.is_draft]
     else:
         return [post for post in posts if tag in tags_to_list(post.tags)]
-
-
-def filter_posts_by_year(year, posts):
-    """Filter by the year the post was created."""
-    return [post for post in posts if year == str(post.create_date.strftime("%Y"))]
-
-
-def hide_drafts(current_user, SUPER_ID, posts):
-    """Filter out drafts if the user is not the author or the super admin"""
-    if current_user.is_authenticated:
-        return [
-            post
-            for post in posts
-            if not post.is_draft
-            or (post.is_draft and post.author_id == current_user.id)
-            or current_user.id == SUPER_ID
-        ]
-    else:
-        return [post for post in posts if not post.is_draft]
-
-
-def filter_posts_by_author(author, user_model, posts):
-    """Filter by the post author."""
-    author_id = user_model.query.filter_by(username=author).first().id
-    return [post for post in posts if author_id == post.author_id]
 
 
 # MISCELLANEOUS

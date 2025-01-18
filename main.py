@@ -29,21 +29,16 @@ from functools import partial, wraps
 from src.forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from src.utils import (
     add_author,
-    filter_posts_by_author,
     filter_posts_by_tag,
-    filter_posts_by_year,
     find_post,
-    from_json,
     get_tags_description,
     get_time,
     get_unique_tags,
-    hide_drafts,
     humanize_time,
     parse_title,
     pipe_tag,
     random_gravatar_url,
     calculate_reading_time,
-    initialize_database,
     tags_to_list,
     tags_to_string,
 )
@@ -170,7 +165,6 @@ class BlogComment(db.Model):
 
 
 with app.app_context():
-    # initialize_database(db, User, BlogPost)
     db.create_all()
 
 
@@ -403,7 +397,7 @@ def edit_post(post_title):
         )
         post.body = edit_form.body.data
         post.is_draft = edit_form.is_draft.data
-        post.tags = (tags_to_string(edit_form.tags.data),)
+        post.tags = tags_to_string(edit_form.tags.data)
 
         if edit_form.publish.data:
             db.session.commit()
