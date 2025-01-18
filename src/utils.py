@@ -8,6 +8,7 @@ from flask_babel import lazy_gettext
 from werkzeug.exceptions import NotFound
 from datetime import datetime, timezone, timedelta
 import humanize
+from werkzeug.security import generate_password_hash
 
 
 # JINJA FILTER
@@ -15,12 +16,14 @@ def from_json(json_string):
     """Deserialize (a str, bytes or bytearray instance containing a JSON document) to a Python object. Used as and"""
     return json.loads(json_string)
 
+
 _LOCAL_MAPPING = {
     "de": "de_DE",
 }
 
+
 def humanize_time(date, language=LANGUAGE, timezone_offset=TIMEZONE_OFFSET):
-    '''Humanizes a datetime.timedelta object, e.g. one hour ago.'''
+    """Humanizes a datetime.timedelta object, e.g. one hour ago."""
     lang = _LOCAL_MAPPING.get(language, None)
     humanize.i18n.activate(lang)
     tzinfo = timezone(timedelta(hours=timezone_offset))
@@ -28,6 +31,7 @@ def humanize_time(date, language=LANGUAGE, timezone_offset=TIMEZONE_OFFSET):
     current = datetime.now(tz=tzinfo)
     print(type(humanize.naturaltime(current - input_date)))
     return humanize.naturaltime(current - input_date)
+
 
 # FORMS UTILS
 def validate_tags_format(form, tags):
@@ -73,14 +77,13 @@ def suggest_img_url(directory):
         return lazy_gettext("Suggestion: %(suggestion)s", suggestion=suggestion)
 
 
-
 # DB FILTER UTILS
 def filter_posts_by_tag(tag, current_user, posts):
     """Filter by tag and draft posts if the user is an admin"""
     if tag.lower() == "draft" and current_user.is_authenticated and current_user.admin:
         return [post for post in posts if post.is_draft]
     else:
-        return [post for post in posts if tag in json.loads(post.tags)]
+        return [post for post in posts if tag in tags_to_list(post.tags)]
 
 
 def filter_posts_by_year(year, posts):
@@ -118,9 +121,23 @@ def get_tags_description(tags):
     return lazy_gettext("Suggestion: %(suggestion)s", suggestion=suggestion)
 
 
+def tags_to_list(tag_string):
+    """Splits a string with tags separated with pipe delimiter into a python list"""
+    return tag_string.strip("|").split("|")
+
+
+def tags_to_string(form_tags):
+    """Generates the string of tags separated with pipe delimiter for database commit"""
+    return f"|{'|'.join([tag.strip() for tag in form_tags.split(",")])}|"
+
+
+def pipe_tag(tag):
+    return f"|{tag}|"
+
+
 def get_unique_tags(post_model):
     """Sorted tags by occurence."""
-    all_tags = [json.loads(post.tags) for post in post_model.query.all()]
+    all_tags = [tags_to_list(post.tags) for post in post_model.query.all()]
     unique_tags = set(tag for tags in all_tags for tag in tags)
     tag_counts = Counter(tag for tags in all_tags for tag in tags)
     return sorted(unique_tags, key=lambda tag: tag_counts[tag], reverse=True)
@@ -174,3 +191,42 @@ def calculate_reading_time(text, words_per_minute=200):
     reading_time_minutes = total_words / words_per_minute
     minutes = int(reading_time_minutes)
     return minutes
+
+
+def initialize_database(db, user_model, post_model):
+    """Initializes the database with admin and anonymous users and dummy posts."""
+    # Create admin and anonymous users
+    if not user_model.query.filter_by(username="admin").first():
+        admin = user_model(
+            email="admin@example.com",
+            password=generate_password_hash("admin123", "pbkdf2:sha256", 8),
+            username="admin",
+            admin=True,
+        )
+        db.session.add(admin)
+
+    if not user_model.query.filter_by(username="anonymous").first():
+        anonymous = user_model(
+            email="anonymous@example.com",
+            password=generate_password_hash("anonymous", "pbkdf2:sha256", 8),
+            username="anonymous",
+            admin=False,
+        )
+        db.session.add(anonymous)
+
+    db.session.commit()
+
+    # Create 10 dummy blog posts
+    admin_user = user_model.query.filter_by(username="admin").first()
+    for i in range(1, 11):
+        post = post_model(
+            title=f"Dummy Post {i}",
+            subtitle=f"This is the subtitle for dummy post {i}.",
+            body=f"This is the body of dummy post {i}.",
+            img_url=f"https://example.com/dummy{i}.jpg",
+            tags=f"|example|post{i}|",
+            author_id=admin_user.id,
+        )
+        db.session.add(post)
+
+    db.session.commit()

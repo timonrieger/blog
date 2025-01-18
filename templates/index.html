@@ -30,30 +30,30 @@
 <div class="container px-4 px-lg-5">
   <div class="row gx-4 gx-lg-5 justify-content-center">
     <div class="col-md-10 col-lg-8 col-xl-7">
-      {% if filter %}
       <div>
         <sup>
           <a href="{{ url_for('home') }}" title="{% trans %}Clear{% endtrans %}">&#x2718;</a> 
-          {% trans trimmed nr_posts=all_posts|length %}
+          {% trans trimmed nr_posts=pagination.total %}
             Found {{ nr_posts }} post
           {% pluralize %}
             Found {{ nr_posts }} posts
           {% endtrans %}
-          {% trans %}for{% endtrans %}
-          {% for filter in filter %}
-            {% if filter[0] %}
-              {% if filter[0] == 'draft' and current_user.admin %}
-                <span class="badge draft-badge">
-                  {{ filter[1] }}: {% trans %}draft{% endtrans %}</span>
-              {% else %}
-                <span class="badge default-badge">
-                {{ filter[1] }}: {{ filter[0] }}</span>
+          {% if filter %}
+            {% trans %}for{% endtrans %}
+            {% for filter in filter %}
+              {% if filter[0] %}
+                {% if filter[0] == 'draft' and current_user.admin %}
+                  <span class="badge draft-badge">
+                    {{ filter[1] }}: {% trans %}draft{% endtrans %}</span>
+                {% else %}
+                  <span class="badge default-badge">
+                  {{ filter[1] }}: {{ filter[0] }}</span>
+                {% endif %}
               {% endif %}
-            {% endif %}
-          {% endfor %}
+            {% endfor %}
+          {% endif %}
         </sup>
       </div>
-      {% endif %}
       <!-- Post preview-->
       {% for post in all_posts %}
       <div class="post-preview">
@@ -87,7 +87,7 @@
           <a href="{{ url_for('home', tag='draft', year=request.args.get('year'), author=request.args.get('author'))}}"
             ><span class="badge draft-badge">{% trans %}draft{% endtrans %}</span></a
           >{% endif %} 
-          {% set tags_list = post.tags|from_json %} 
+          {% set tags_list = post.tags|tags_to_list %} 
           {% for tag in tags_list %}
           <a href="{{ url_for('home', tag=tag, year=request.args.get('year'), author=request.args.get('author'))}}"
             ><span class="badge default-badge">{{ tag }}</span></a
@@ -101,17 +101,17 @@
 
       <!-- Pager-->
       <div class="d-flex justify-content-end mb-4" style="gap: 10px">
-        {% if page > 1 %}
+        {% if pagination.has_prev %}
         <a
           class="btn btn-secondary text-uppercase"
-          href="{{ url_for('home', page=page - 1 ) }}"
+          href="{{ url_for('home', page=pagination.page - 1, author=request.args.get('author'), tag=request.args.get('tag'), year=request.args.get('year') ) }}"
           >{% trans %}Newer Posts{% endtrans %}</a
         >
         {% endif %} 
-        {% if page < max_page %}
+        {% if pagination.has_next %}
         <a
           class="btn btn-secondary text-uppercase"
-          href="{{ url_for('home', page=page + 1 ) }}"
+          href="{{ url_for('home', page=pagination.page + 1, author=request.args.get('author'), tag=request.args.get('tag'), year=request.args.get('year') ) }}"
           >{% trans %}Older Posts{% endtrans %}</a
         >
         {% endif %}

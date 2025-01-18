@@ -40,8 +40,12 @@ from src.utils import (
     hide_drafts,
     humanize_time,
     parse_title,
+    pipe_tag,
     random_gravatar_url,
     calculate_reading_time,
+    initialize_database,
+    tags_to_list,
+    tags_to_string,
 )
 from src.config import (
     BLOG_NAME,
@@ -57,10 +61,9 @@ from src.config import (
     POSTS_PER_PAGE,
 )
 from jinja2.exceptions import TemplateNotFound
-from jinja2.ext import i18n
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
-from sqlalchemy import Integer, String, Text, Boolean, DateTime
+from sqlalchemy import Integer, String, Text, Boolean, DateTime, extract
 from typing import List
 from werkzeug.security import generate_password_hash, check_password_hash
 import dotenv
@@ -104,7 +107,7 @@ SUPER_ID = int(
     os.getenv("SUPER_ID")
 )  # The super user's ID that can edit other admin's content and delete every comment
 
-app.jinja_env.filters.update(from_json=from_json, humanize_time=humanize_time)
+app.jinja_env.filters.update(tags_to_list=tags_to_list, humanize_time=humanize_time)
 app.jinja_env.add_extension("jinja2.ext.i18n")
 
 
@@ -113,7 +116,7 @@ class Base(DeclarativeBase):
 
 
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DB_URI", "sqlite:///blog.db")
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
 
@@ -140,7 +143,7 @@ class BlogPost(db.Model):
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
     deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_draft: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    tags: Mapped[str] = mapped_column(String, default=json.dumps([]))
+    tags: Mapped[str] = mapped_column(String)
 
     # Relationships
     author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("users.id"))
@@ -167,6 +170,7 @@ class BlogComment(db.Model):
 
 
 with app.app_context():
+    # initialize_database(db, User, BlogPost)
     db.create_all()
 
 
@@ -210,53 +214,35 @@ def admin_required(f):
 
 @app.route("/")
 def home():
-    page = int(request.args.get("page", 1))
-    posts_per_page = POSTS_PER_PAGE
-    offset = (page - 1) * posts_per_page
-    total_posts = BlogPost.query.count()
-    max_page = max(1, (total_posts + posts_per_page - 1) // posts_per_page)
-
-    if page < 1 or page > max_page:
-        return redirect(url_for("home"))
-
-    result = (
-        db.session.execute(
-            db.select(BlogPost)
-            .order_by(BlogPost.create_date.desc())
-            .where(BlogPost.deleted == False)
-            .limit(posts_per_page)
-            .offset(offset)
-        )
-        .scalars()
-        .all()
-    )
     tag = request.args.get("tag")
     year = request.args.get("year")
     author = request.args.get("author")
-    filters = []
+
+    query = BlogPost.query.order_by(BlogPost.create_date.desc())
+
+    filters = [BlogPost.deleted == False]
+
     if tag:
-        filters.append(partial(filter_posts_by_tag, tag, current_user))
+        filters.append(BlogPost.tags.contains(pipe_tag(tag)))
+
     if year:
-        filters.append(partial(filter_posts_by_year, year))
+        filters.append(extract("year", BlogPost.create_date) == int(year))
     if author:
-        filters.append(partial(filter_posts_by_author, author, User))
+        author_obj = User.query.filter_by(username=author).first()
+        if author_obj:
+            filters.append(BlogPost.author_id == author_obj.id)
 
-    filters.append(partial(hide_drafts, current_user, SUPER_ID))
+    if current_user.is_anonymous or not current_user.admin:
+        filters.append(BlogPost.is_draft == False)
 
-    filtered_posts = result
-
-    for filter_func in filters:
-        filtered_posts = [
-            post for post in filtered_posts if post in filter_func(result)
-        ]
-
-    posts = add_author(filtered_posts, User)
+    query = query.filter(*filters)
+    pagination = query.paginate(per_page=POSTS_PER_PAGE)
+    posts = add_author(pagination, User)
 
     return render_template(
         "index.html",
         all_posts=posts,
-        page=page,
-        max_page=max_page,
+        pagination=pagination,
         filter=(
             [
                 (tag, gettext("tag")),
@@ -330,7 +316,7 @@ def show_post(post_title):
         .all()
     )
     similar_posts = []
-    for tag in from_json(post.tags):
+    for tag in tags_to_list(post.tags):
         similar_posts += filter_posts_by_tag(tag, current_user, result_posts)
 
     nr_sample_posts = min([NR_RELATED_POSTS, len(similar_posts)])
@@ -364,9 +350,7 @@ def new_post():
             img_url=form.img_url.data,
             author_id=current_user.id,
             is_draft=form.is_draft.data,
-            tags=json.dumps(
-                [tag.strip() for tag in form.tags.data.split(",")] if not "" else []
-            ),
+            tags=tags_to_string(form.tags.data),
         )
         if form.publish.data:
             db.session.add(new_post)
@@ -403,7 +387,7 @@ def edit_post(post_title):
         img_url=post.img_url,
         body=post.body,
         is_draft=post.is_draft,
-        tags=", ".join((json.loads(post.tags))),
+        tags=", ".join(tags_to_list(post.tags)),
     )
     edit_form.tags.description = get_tags_description(unique_tags)
     if edit_form.validate_on_submit():
@@ -419,9 +403,8 @@ def edit_post(post_title):
         )
         post.body = edit_form.body.data
         post.is_draft = edit_form.is_draft.data
-        post.tags = json.dumps(
-            [tag.strip() for tag in edit_form.tags.data.split(",")] if not "" else []
-        )
+        post.tags = (tags_to_string(edit_form.tags.data),)
+
         if edit_form.publish.data:
             db.session.commit()
             flash(gettext("Post successfully updated!"), "success")
