@@ -1,7 +1,5 @@
 from datetime import datetime as dt
 import hashlib
-import json
-import random
 from flask import (
     Flask,
     Response,
@@ -25,7 +23,7 @@ from flask_login import (
     logout_user,
     login_required,
 )
-from functools import partial, wraps
+from functools import wraps
 from src.forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from src.utils import (
     add_author,
@@ -58,7 +56,7 @@ from src.config import (
 from jinja2.exceptions import TemplateNotFound
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
-from sqlalchemy import Integer, String, Text, Boolean, DateTime, extract
+from sqlalchemy import Integer, String, Text, Boolean, DateTime, extract, func, or_
 from typing import List
 from werkzeug.security import generate_password_hash, check_password_hash
 import dotenv
@@ -217,7 +215,10 @@ def home():
     filters = [BlogPost.deleted == False]
 
     if tag:
-        filters.append(BlogPost.tags.contains(pipe_tag(tag)))
+        if tag.lower() == "draft" and current_user.is_authenticated and current_user.admin:
+            filters.append(BlogPost.is_draft == True)
+        else:
+            filters.append(BlogPost.tags.contains(pipe_tag(tag)))
 
     if year:
         filters.append(extract("year", BlogPost.create_date) == int(year))
@@ -253,12 +254,8 @@ def home():
 def show_post(post_title):
     post = find_post(post_title, BlogPost, User)
     result_comments = (
-        db.session.execute(
-            db.select(BlogComment)
-            .where(BlogComment.post_id == post.id, BlogComment.deleted == False)
-            .order_by(BlogComment.id.asc())
-        )
-        .scalars()
+        BlogComment.query.where(BlogComment.post_id == post.id, BlogComment.deleted == False)
+        .order_by(BlogComment.id.asc())
         .all()
     )
     comments = add_author(result_comments, User)[::-1]
@@ -299,26 +296,33 @@ def show_post(post_title):
             else:
                 return login_manager.unauthorized()
 
-    result_posts = (
-        db.session.execute(
-            db.select(BlogPost)
-            .where(BlogPost.deleted == False)
-            .where(BlogPost.is_draft == False)
-            .where(BlogPost.id != post.id)
+    # Find related posts
+    filters = [
+        BlogPost.deleted == False,
+        BlogPost.is_draft == False,
+        BlogPost.id != post.id,
+    ]
+
+    filters.append(
+        or_(
+            *[
+                BlogPost.tags.like(f"%{pipe_tag(tag)}%")
+                for tag in tags_to_list(post.tags)
+            ]
         )
-        .scalars()
+    )
+
+    related_posts = (
+        BlogPost.query.filter(*filters)
+        .order_by(func.random())
+        .limit(NR_RELATED_POSTS)
         .all()
     )
-    similar_posts = []
-    for tag in tags_to_list(post.tags):
-        similar_posts += filter_posts_by_tag(tag, current_user, result_posts)
-
-    nr_sample_posts = min([NR_RELATED_POSTS, len(similar_posts)])
 
     return render_template(
         "post.html",
         post=post,
-        related_posts=add_author(random.sample(similar_posts, nr_sample_posts), User),
+        related_posts=related_posts,
         comments=comments,
         form=comment_form,
         anonymous_gravatar=random_gravatar_url,
@@ -370,8 +374,6 @@ def new_post():
 @admin_required
 def edit_post(post_title):
     post = find_post(post_title, BlogPost, User)
-    if not post:
-        abort(404)
 
     unique_tags = get_unique_tags(BlogPost)
 
@@ -419,8 +421,7 @@ def edit_post(post_title):
 @admin_required
 def delete_post(post_title):
     post = find_post(post_title, BlogPost, User)
-    if not post:
-        abort(404)
+
     if current_user.id == ANONYMOUS_ID:
         flash(gettext("As an anonymous user you cannot delete posts!"), "danger")
     elif current_user.id == post.author_id or current_user.id == SUPER_ID:
@@ -589,12 +590,8 @@ def logout():
 def rss_feed():
 
     result = (
-        db.session.execute(
-            db.select(BlogPost)
-            .order_by(BlogPost.id.desc())
-            .where(BlogPost.deleted == False, BlogPost.is_draft == False)
-        )
-        .scalars()
+        BlogPost.query.where(BlogPost.deleted == False, BlogPost.is_draft == False)
+        .order_by(BlogPost.id.desc())
         .all()
     )
 
@@ -659,7 +656,8 @@ def add_header(response):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Cache-Control"] = "max-age=86400"
+    if not app.debug:
+        response.headers["Cache-Control"] = "max-age=86400"
     return response
 
 
