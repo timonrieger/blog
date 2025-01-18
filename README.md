@@ -168,6 +168,7 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
    - `DISPLAY_READING_TIME`: Show the approximate reading time on each post (True/False).
    - `DISPLAY_EDIT_DATE`: Show the edit date if you edited the post body (True/False).
    - `DRAFT_ON_DEFAULT`: Sets the checkbox to publish as draft in the post form on default (True/False).
+   - `LEVEL_ADMINS`: Whether all admins have should have all right. Useful if you work together and trust each other. (True/False)
    - `TIMEZONE_OFFSET`: Set the offset to UTC (e.g. for New York -5) (± number)
    - `DATE_FORMAT`: The format for dates (used everywhere except comments) (valid datetime format).
 
@@ -261,6 +262,8 @@ There are five types of users:
 - Logged in users: as above + `delete:own_comment`
 - Admin user: as above + `write:post`, `edit:own_post`, `delete:own_post`
 - Super admin (only one, YOU): full access (can delete, edit, write anything)
+   
+   => you can level all admins to the super admin role (see <a href="#configuration">configuration section</a>)
 
 ## Endpoints
 

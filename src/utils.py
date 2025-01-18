@@ -2,12 +2,11 @@ from collections import Counter
 import os
 import hashlib
 import re
-from src.config import LANGUAGE, TIMEZONE_OFFSET
+from src.config import LANGUAGE, LEVEL_ADMINS, SUPER_ID, TIMEZONE_OFFSET
 from flask_babel import lazy_gettext
 from werkzeug.exceptions import NotFound
 from datetime import datetime, timezone, timedelta
 import humanize
-from werkzeug.security import generate_password_hash
 
 
 # JINJA FILTER
@@ -29,12 +28,7 @@ def humanize_time(date, language=LANGUAGE, timezone_offset=TIMEZONE_OFFSET):
 
 # FORMS UTILS
 def validate_tags_format(form, tags):
-    """
-    Validates that the tags are comma-separated and do not include any whitespaces.
-
-    :param tags: A string containing comma-separated tags
-    :return: A list of valid tags if the format is correct, otherwise raises a ValueError
-    """
+    """Validates that the tags are comma-separated and do not include any whitespaces."""
     if form.tags.data == "":
         return []
 
@@ -71,15 +65,6 @@ def suggest_img_url(directory):
         return lazy_gettext("Suggestion: %(suggestion)s", suggestion=suggestion)
 
 
-# DB FILTER UTILS
-def filter_posts_by_tag(tag, current_user, posts):
-    """Filter by tag and draft posts if the user is an admin"""
-    if tag.lower() == "draft" and current_user.is_authenticated and current_user.admin:
-        return [post for post in posts if post.is_draft]
-    else:
-        return [post for post in posts if tag in tags_to_list(post.tags)]
-
-
 # MISCELLANEOUS
 def get_tags_description(tags):
     """Add description to tag field."""
@@ -91,16 +76,17 @@ def get_tags_description(tags):
 
 
 def tags_to_list(tag_string):
-    """Splits a string with tags separated with pipe delimiter into a python list"""
+    """Splits a string with tags separated with pipe delimiter into a python list."""
     return tag_string.strip("|").split("|")
 
 
 def tags_to_string(form_tags):
-    """Generates the string of tags separated with pipe delimiter for database commit"""
+    """Generates the string of tags separated with pipe delimiter for database commit."""
     return f"|{'|'.join([tag.strip() for tag in form_tags.split(",")])}|"
 
 
 def pipe_tag(tag):
+    """Wraps a tag in pipes for unique identification in SQL queries."""
     return f"|{tag}|"
 
 
@@ -119,23 +105,21 @@ def get_time(timezone_offset=TIMEZONE_OFFSET):
 
 
 def parse_title(raw_title):
-    """Converts the post title to a url string"""
+    """Converts a post title to a url string."""
     return raw_title.lower().replace(" ", "-")
 
 
 def find_post(title, post_model, user_model):
-    """Uses a lower case title combined with hyphens and returns the corresponding BlogPost object in the database"""
+    """Uses a lower case title combined with hyphens and returns the corresponding post object with author added"""
     all_posts = post_model.query.all()
     post_list = [item for item in all_posts if parse_title(item.title) == title]
     if not post_list:
         raise NotFound()
-    post = post_list[0]
-    post.author = user_model.query.filter_by(id=post.author_id).first()
-    return post
+    return add_author(post_list, user_model)[0]
 
 
 def add_author(list, user_model):
-    """Maps the author id to the User object and attaches the username to each item in the list (BlogPost or BlogComment)"""
+    """Maps the author id to the User object and attaches the username to each item in the list (post or comment)."""
     authors = [post.author_id for post in list]
     usernames = user_model.query.filter(user_model.id.in_(authors)).all()
     user_dict = {user.id: user for user in usernames}
@@ -162,40 +146,12 @@ def calculate_reading_time(text, words_per_minute=200):
     return minutes
 
 
-def initialize_database(db, user_model, post_model):
-    """Initializes the database with admin and anonymous users and dummy posts."""
-    # Create admin and anonymous users
-    if not user_model.query.filter_by(username="admin").first():
-        admin = user_model(
-            email="admin@example.com",
-            password=generate_password_hash("admin123", "pbkdf2:sha256", 8),
-            username="admin",
-            admin=True,
-        )
-        db.session.add(admin)
-
-    if not user_model.query.filter_by(username="anonymous").first():
-        anonymous = user_model(
-            email="anonymous@example.com",
-            password=generate_password_hash("anonymous", "pbkdf2:sha256", 8),
-            username="anonymous",
-            admin=False,
-        )
-        db.session.add(anonymous)
-
-    db.session.commit()
-
-    # Create 10 dummy blog posts
-    admin_user = user_model.query.filter_by(username="admin").first()
-    for i in range(1, 11):
-        post = post_model(
-            title=f"Dummy Post {i}",
-            subtitle=f"This is the subtitle for dummy post {i}.",
-            body=f"This is the body of dummy post {i}.",
-            img_url=f"https://example.com/dummy{i}.jpg",
-            tags=f"|example|post{i}|",
-            author_id=admin_user.id,
-        )
-        db.session.add(post)
-
-    db.session.commit()
+def is_author(current_user, item):
+    """Checks if the current user is either author of the comment/post or super admin or admin if LEVEL_ADMINS=True ."""
+    if current_user.is_anonymous:
+        return False
+    if current_user.id in [item.author_id, SUPER_ID] or (
+        current_user.admin and LEVEL_ADMINS
+    ):
+        return True
+    return False

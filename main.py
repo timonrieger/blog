@@ -27,11 +27,11 @@ from functools import wraps
 from src.forms import CreatePostForm, RegisterForm, LoginForm, CommentForm
 from src.utils import (
     add_author,
-    filter_posts_by_tag,
     find_post,
     get_tags_description,
     get_time,
     get_unique_tags,
+    is_author,
     humanize_time,
     parse_title,
     pipe_tag,
@@ -41,11 +41,14 @@ from src.utils import (
     tags_to_string,
 )
 from src.config import (
+    ANONYMOUS_ID,
     BLOG_NAME,
     BLOG_TITLE,
     BLOG_DESCRIPTION,
     COMMENT_RICH_EDITOR,
+    DB_URI,
     NR_RELATED_POSTS,
+    SECRET_KEY,
     SHOW_COMMENT_TUTORIAL,
     DATE_FORMAT,
     LANGUAGE,
@@ -53,19 +56,16 @@ from src.config import (
     DISPLAY_READING_TIME,
     POSTS_PER_PAGE,
 )
+
 from jinja2.exceptions import TemplateNotFound
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
 from sqlalchemy import Integer, String, Text, Boolean, DateTime, extract, func, or_
 from typing import List
 from werkzeug.security import generate_password_hash, check_password_hash
-import dotenv
-import os
-
-dotenv.load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY")
+app.secret_key = SECRET_KEY
 
 ckeditor = CKEditor(app)
 
@@ -93,12 +93,6 @@ gravatar = Gravatar(
     base_url=None,
 )
 
-ANONYMOUS_ID = int(
-    os.getenv("ANONYMOUS_ID")
-)  # Register a dummy account that users can use for commenting anonymously with registering themselves
-SUPER_ID = int(
-    os.getenv("SUPER_ID")
-)  # The super user's ID that can edit other admin's content and delete every comment
 
 app.jinja_env.filters.update(tags_to_list=tags_to_list, humanize_time=humanize_time)
 app.jinja_env.add_extension("jinja2.ext.i18n")
@@ -108,7 +102,7 @@ class Base(DeclarativeBase):
     pass
 
 
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DB_URI", "sqlite:///blog.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
@@ -169,11 +163,11 @@ with app.app_context():
 @app.context_processor
 def global_vars():
     return dict(
-        SUPER_ID=SUPER_ID,
         ANONYMOUS_ID=ANONYMOUS_ID,
         DISPLAY_EDIT_DATE=DISPLAY_EDIT_DATE,
         DISPLAY_READING_TIME=DISPLAY_READING_TIME,
         DATE_FORMAT=DATE_FORMAT,
+        is_author=is_author,
         COMMENT_RICH_EDITOR=COMMENT_RICH_EDITOR,
         SHOW_COMMENT_TUTORIAL=SHOW_COMMENT_TUTORIAL,
         BLOG_NAME=BLOG_NAME,
@@ -215,7 +209,11 @@ def home():
     filters = [BlogPost.deleted == False]
 
     if tag:
-        if tag.lower() == "draft" and current_user.is_authenticated and current_user.admin:
+        if (
+            tag.lower() == "draft"
+            and current_user.is_authenticated
+            and current_user.admin
+        ):
             filters.append(BlogPost.is_draft == True)
         else:
             filters.append(BlogPost.tags.contains(pipe_tag(tag)))
@@ -254,22 +252,20 @@ def home():
 def show_post(post_title):
     post = find_post(post_title, BlogPost, User)
     result_comments = (
-        BlogComment.query.where(BlogComment.post_id == post.id, BlogComment.deleted == False)
+        BlogComment.query.where(
+            BlogComment.post_id == post.id, BlogComment.deleted == False
+        )
         .order_by(BlogComment.id.asc())
         .all()
     )
     comments = add_author(result_comments, User)[::-1]
+
     edit_comment = request.args.get("edit_comment")
     if edit_comment:
-        if not current_user.is_authenticated or current_user.id == ANONYMOUS_ID:
-            flash(gettext("As an anonymous user you cannot edit comments!", "danger"))
-            return redirect(url_for("show_post", post_title=post_title, commented=True))
         comment = BlogComment.query.filter_by(id=edit_comment).first()
-        if not comment or comment.deleted:
+        if not comment or comment.deleted or not is_author(current_user, comment):
             abort(404)
-        if comment.author_id != current_user.id:
-            flash(gettext("You are not the author of the comment!"), "danger")
-            return redirect(url_for("show_post", post_title=post_title, commented=True))
+
         comment_form = CommentForm(comment=comment.text)
         if comment_form.validate_on_submit():
             comment.text = comment_form.comment.data
@@ -296,7 +292,6 @@ def show_post(post_title):
             else:
                 return login_manager.unauthorized()
 
-    # Find related posts
     filters = [
         BlogPost.deleted == False,
         BlogPost.is_draft == False,
@@ -350,6 +345,7 @@ def new_post():
             is_draft=form.is_draft.data,
             tags=tags_to_string(form.tags.data),
         )
+
         if form.publish.data:
             db.session.add(new_post)
             db.session.commit()
@@ -358,6 +354,7 @@ def new_post():
             else:
                 flash(gettext("Post published!"), "success")
             return redirect(url_for("home"))
+
         elif form.preview.data:
             flash(gettext("You are in preview mode!"), "success")
             return render_template(
@@ -366,6 +363,7 @@ def new_post():
                 post=add_author([new_post], User)[0],
                 calculate_reading_time=calculate_reading_time,
             )
+
     return render_template("make-post.html", form=form)
 
 
@@ -374,6 +372,9 @@ def new_post():
 @admin_required
 def edit_post(post_title):
     post = find_post(post_title, BlogPost, User)
+
+    if not is_author(current_user, post):
+        abort(404)
 
     unique_tags = get_unique_tags(BlogPost)
 
@@ -386,6 +387,7 @@ def edit_post(post_title):
         tags=", ".join(tags_to_list(post.tags)),
     )
     edit_form.tags.description = get_tags_description(unique_tags)
+
     if edit_form.validate_on_submit():
         post.title = edit_form.title.data
         post.subtitle = edit_form.subtitle.data
@@ -405,6 +407,7 @@ def edit_post(post_title):
             db.session.commit()
             flash(gettext("Post successfully updated!"), "success")
             return redirect(url_for("show_post", post_title=parse_title(post.title)))
+
         elif edit_form.preview.data:
             flash(gettext("You are in preview mode!"), "success")
             return render_template(
@@ -413,6 +416,7 @@ def edit_post(post_title):
                 post=post,
                 calculate_reading_time=calculate_reading_time,
             )
+
     return render_template("make-post.html", form=edit_form, is_edit=True)
 
 
@@ -422,33 +426,30 @@ def edit_post(post_title):
 def delete_post(post_title):
     post = find_post(post_title, BlogPost, User)
 
-    if current_user.id == ANONYMOUS_ID:
-        flash(gettext("As an anonymous user you cannot delete posts!"), "danger")
-    elif current_user.id == post.author_id or current_user.id == SUPER_ID:
-        post.deleted = True
-        db.session.commit()
-        flash(
-            f"{gettext('Successfully deleted the post!')} <a href='/{post_title}/restore'>{gettext('Undo')}</a>",
-            "success",
-        )
-    else:
-        flash("You are not the author of the post!", "danger")
+    if not is_author(current_user, post):
+        abort(404)
+
+    post.deleted = True
+    db.session.commit()
+    flash(
+        f"{gettext('Successfully deleted the post!')} <a href='/{post_title}/restore'>{gettext('Undo')}</a>",
+        "success",
+    )
     return redirect(url_for("home"))
 
 
 @app.route("/<post_title>/restore")
 def restore_post(post_title):
     post = find_post(post_title, BlogPost, User)
-    if current_user.id == ANONYMOUS_ID:
-        flash(gettext("As an anonymous user you cannot restore comments!"), "danger")
-    if current_user.id == post.author_id or current_user.id == SUPER_ID:
-        post.deleted = False
-        db.session.commit()
-        flash(gettext("Post successfully restored!"), "success")
-        return redirect(url_for("show_post", post_title=post_title))
-    else:
-        flash(gettext("You are not the author of the post!"), "danger")
-        return redirect(url_for("home"))
+
+    if not is_author(current_user, post):
+        abort(404)
+
+    post.deleted = False
+    db.session.commit()
+
+    flash(gettext("Post successfully restored!"), "success")
+    return redirect(url_for("show_post", post_title=post_title))
 
 
 @app.route("/<post_title>/delete/comment/<int:comment_id>")
@@ -456,18 +457,16 @@ def restore_post(post_title):
 def delete_comment(post_title, comment_id):
     comment = db.get_or_404(BlogComment, comment_id)
 
-    if current_user.id == ANONYMOUS_ID:
-        flash(gettext("As an anonymous user you cannot delete comments!"), "danger")
-    elif current_user.id == comment.author_id or current_user.id == SUPER_ID:
-        comment.deleted = True
-        db.session.commit()
-        flash(
-            f"{gettext('Successfully deleted the comment!')} <a href='/{post_title}/restore/comment/{comment_id}'>{gettext('Undo')}</a>",
-            "success",
-        )
-    else:
-        flash(gettext("You are not the author of the comment!"), "danger")
+    if not is_author(current_user, comment):
+        abort(404)
 
+    comment.deleted = True
+    db.session.commit()
+
+    flash(
+        f"{gettext('Successfully deleted the comment!')} <a href='/{post_title}/restore/comment/{comment_id}'>{gettext('Undo')}</a>",
+        "success",
+    )
     return redirect(url_for("show_post", post_title=post_title, commented=True))
 
 
@@ -476,14 +475,14 @@ def delete_comment(post_title, comment_id):
 def restore_comment(post_title, comment_id):
     comment = db.get_or_404(BlogComment, comment_id)
 
-    if current_user.id == comment.author_id or current_user.id == SUPER_ID:
-        comment.deleted = False
-        db.session.commit()
-        flash(gettext("Comment successfully restored!"), "success")
-        return redirect(url_for("show_post", post_title=post_title, commented=True))
-    else:
-        flash(gettext("You are not the author of the comment!"), "danger")
-        return redirect(url_for("show_post", post_title=post_title))
+    if not is_author(current_user, comment):
+        abort(404)
+
+    comment.deleted = False
+    db.session.commit()
+
+    flash(gettext("Comment successfully restored!"), "success")
+    return redirect(url_for("show_post", post_title=post_title, commented=True))
 
 
 @app.route("/author/<author>")
@@ -506,9 +505,11 @@ def login():
         email = form.email.data
         password = form.password.data
         user = User.query.filter_by(email=email).first()
+
         if not user:
             flash(gettext("No account found. Register first!"), "danger")
             return redirect(url_for("register"))
+
         if check_password_hash(user.password, password):
             login_user(user)
             flash(
@@ -547,11 +548,13 @@ def register():
         password = form.password.data
         username = form.username.data
         user = User.query.filter_by(email=email).first()
+
         if user:
             flash(gettext("Already registered! Login instead."), "danger")
             return redirect(url_for("login"))
 
         hashed_password = generate_password_hash(password, "pbkdf2:sha256", 8)
+
         if not user:
             new_user = User(
                 email=email,

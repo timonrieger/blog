@@ -55,7 +55,7 @@
     <div class="row gx-4 gx-lg-5 justify-content-center">
       <div class="col-md-10 col-lg-8 col-xl-7">
         <div class="post-toolbar">
-          {% if current_user.id == post.author.id or current_user.id == SUPER_ID %}
+          {% if is_author(current_user, post) %}
           <div class="d-flex justify-content-end mb-4">
             {% if preview %}
               <a
@@ -131,20 +131,20 @@
                     {% endtrans %}
                     <em>{% if comment.edited %}({% trans %}edited{% endtrans %}){% endif %}</em>
                     
-                    {% if current_user.id != ANONYMOUS_ID and current_user.id == comment.author_id %}
+                    {% if is_author(current_user, comment) %}
                       &#124;
+                      {% if current_user.id == comment.author_id $}
+                        <a
+                          href="{{url_for('show_post', post_title=post.title|lower|replace(' ', '-'), edit_comment=comment.id) }}"
+                          title="{% trans %}Edit comment{% endtrans %}"
+                          >&#9998;</a
+                        >
+                      {% endif %}
                       <a
-                        href="{{url_for('show_post', post_title=post.title|lower|replace(' ', '-'), edit_comment=comment.id) }}"
-                        title="{% trans %}Edit comment{% endtrans %}"
-                        >&#9998;</a
+                        href="{{url_for('delete_comment', post_title=post.title|lower|replace(' ', '-'), comment_id=comment.id) }}"
+                        title="{% trans %}Soft delete{% endtrans %}"
+                        >&#x2718;</a
                       >
-                        {% if current_user.id == SUPER_ID %}
-                          <a
-                            href="{{url_for('delete_comment', post_title=post.title|lower|replace(' ', '-'), comment_id=comment.id) }}"
-                            title="{% trans %}Soft delete{% endtrans %}"
-                            >&#x2718;</a
-                          >
-                        {% endif %}
                     {% endif %}
                   </span>
                   <p>{{ comment.text|safe }}</p>

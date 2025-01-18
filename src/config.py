@@ -1,8 +1,9 @@
 # Follow the README for explanation
-LANGUAGE = "en"
+LANGUAGE = "de"
 DISPLAY_READING_TIME = True
 DISPLAY_EDIT_DATE = True
 DRAFT_ON_DEFAULT = True
+LEVEL_ADMINS = False
 TIMEZONE_OFFSET = 0
 DATE_FORMAT = "MMMM d, yyyy"
 CHECK_EMAIL = True
@@ -14,3 +15,17 @@ SHOW_COMMENT_TUTORIAL = True
 BLOG_NAME = "Blog Boiler Pro"
 BLOG_TITLE = "Blog Boiler Pro built with Flask"
 BLOG_DESCRIPTION = "Read my latest blog post on Blog Boiler Pro. Here I write about Ideas, Thoughts, Conclusions I'd like to share with you."
+
+import dotenv
+import os
+
+dotenv.load_dotenv()
+# Edit the following in the .env file
+ANONYMOUS_ID = int(
+    os.getenv("ANONYMOUS_ID")
+)  # Register a dummy account that users can use for commenting anonymously without registering themselves
+SUPER_ID = int(
+    os.getenv("SUPER_ID")
+)  # The super user's ID that can edit other admin's content and delete every comment
+DB_URI = os.environ.get("DB_URI", "sqlite:///blog.db")
+SECRET_KEY = os.getenv("SECRET_KEY")
