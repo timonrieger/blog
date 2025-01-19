@@ -61,10 +61,6 @@ from src.config import (
     TIMEZONE_OFFSET,
 )
 import requests
-import dotenv
-import os
-
-dotenv.load_dotenv()
 
 from jinja2.exceptions import TemplateNotFound
 from sqlalchemy import extract, func, or_
@@ -461,7 +457,7 @@ def login():
         password = form.password.data
         user = User.query.filter_by(email=email).first()
         data = {"email": email, "password": password}
-        response = requests.post(url=f"{AUTH_URL}/login", json=data)
+        response = requests.post(url=f"{AUTH_URL}/api/login", json=data)
         if response.status_code == 200:
             flash(response.json()["message"], "success")
             login_user(user)
@@ -501,7 +497,7 @@ def register():
             "username": username,
             "then": f"{request.url_root}/login",
         }
-        response = requests.post(f"{AUTH_URL}/register", json=data)
+        response = requests.post(f"{AUTH_URL}/api/register", json=data)
         (
             flash(response.json()["message"], "success")
             if response.status_code == 200
