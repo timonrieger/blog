@@ -49,6 +49,7 @@ from src.config import (
     BLOG_TITLE,
     COMMENT_RICH_EDITOR,
     DB_URI,
+    AUTH_URL,
     NR_RELATED_POSTS,
     SECRET_KEY,
     SHOW_COMMENT_TUTORIAL,
@@ -67,16 +68,12 @@ import os
 dotenv.load_dotenv()
 
 from jinja2.exceptions import TemplateNotFound
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
-from sqlalchemy import Integer, String, Text, Boolean, DateTime, extract, func, or_
-from typing import List
-from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import extract, func, or_
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
 
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DB_URI")
+app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI
 db.init_app(app)
 
 ckeditor = CKEditor(app)
@@ -299,6 +296,7 @@ def new_post():
             title=form.title.data,
             subtitle=form.subtitle.data,
             body=form.body.data,
+            create_date=get_time(),
             img_url=form.img_url.data,
             author_id=current_user.id,
             is_draft=form.is_draft.data,
