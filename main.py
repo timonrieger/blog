@@ -222,8 +222,7 @@ def home():
         filters.append(extract("year", BlogPost.create_date) == int(year))
     if author:
         author_obj = User.query.filter_by(username=author).first()
-        if author_obj:
-            filters.append(BlogPost.author_id == author_obj.id)
+        filters.append(BlogPost.author_id == author_obj.id)
 
     if current_user.is_anonymous or not current_user.admin:
         filters.append(BlogPost.is_draft == False)
@@ -232,19 +231,20 @@ def home():
     pagination = query.paginate(per_page=POSTS_PER_PAGE)
     posts = add_author(pagination, User)
 
+    filter_badges = []
+    for key in request.args:
+        if key == "tag" and tag:
+            filter_badges.append((gettext("tag"), tag))
+        elif key == "year" and year:
+            filter_badges.append((gettext("year"), year))
+        elif key == "author" and author:
+            filter_badges.append((gettext("author"), author))
+
     return render_template(
         "index.html",
         all_posts=posts,
         pagination=pagination,
-        filter=(
-            [
-                (tag, gettext("tag")),
-                (year, gettext("year")),
-                (author, gettext("author")),
-            ]
-            if tag or year or author
-            else []
-        ),
+        filter=filter_badges,
     )
 
 

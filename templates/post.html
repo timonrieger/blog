@@ -1,11 +1,11 @@
 {% extends "layout.html" %} 
 
 {% block title %}
-  {{ post.title }} &#124; Blog Boiler Pro
+  {{ post.title }} &#124; {{ BLOG_TITLE }}
 {% endblock %}
 
 {% block description %}
-  {{ post.title }} &#45; {{ post.subtitle }} &#45; by {{ post.author.username }}
+  {{ post.subtitle }} &#45; by {{ post.author.username }}
 {%endblock %} 
 
 {% from "bootstrap5/form.html" import render_form %} 
@@ -133,7 +133,7 @@
                     
                     {% if is_author(current_user, comment) %}
                       &#124;
-                      {% if current_user.id == comment.author_id $}
+                      {% if current_user.id == comment.author_id %}
                         <a
                           href="{{url_for('show_post', post_title=post.title|lower|replace(' ', '-'), edit_comment=comment.id) }}"
                           title="{% trans %}Edit comment{% endtrans %}"
