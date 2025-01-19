@@ -1,10 +1,12 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Register on Brain Snippets Blog | Timon Rieger
+    Register  &#124; {{ BLOG_TITLE }}
 {% endblock %}
 
-{% block description %}Register on Brain Snippets to share your thoughts and support the authors.{%endblock %} 
+{% block description %}
+  Register to share your thoughts and support the authors.
+{%endblock %} 
 
 
 {% from "bootstrap5/form.html" import render_form %}

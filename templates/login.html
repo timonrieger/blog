@@ -1,11 +1,12 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Login to Brain Snippets Blog
+    Login &#124; {{ BLOG_TITLE }}
 {% endblock %}
 
-{% block description %}Login to Brain Snippets to share your thoughts and support the authors.{%endblock %} 
-
+{% block description %}
+  Login to share your thoughts and support the authors.
+{%endblock %} 
 
 {% from "bootstrap5/form.html" import render_form %}
 

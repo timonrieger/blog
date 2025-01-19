@@ -1,9 +1,8 @@
 from collections import Counter
-import json
 import os
 import hashlib
 import re
-from src.config import LANGUAGE, TIMEZONE_OFFSET
+from src.config import LANGUAGE, LEVEL_ADMINS, SUPER_ID, TIMEZONE_OFFSET
 from flask_babel import lazy_gettext
 from werkzeug.exceptions import NotFound
 from datetime import datetime, timezone, timedelta
@@ -11,16 +10,13 @@ import humanize
 
 
 # JINJA FILTER
-def from_json(json_string):
-    """Deserialize (a str, bytes or bytearray instance containing a JSON document) to a Python object. Used as and"""
-    return json.loads(json_string)
-
 _LOCAL_MAPPING = {
     "de": "de_DE",
 }
 
+
 def humanize_time(date, language=LANGUAGE, timezone_offset=TIMEZONE_OFFSET):
-    '''Humanizes a datetime.timedelta object, e.g. one hour ago.'''
+    """Humanizes a datetime.timedelta object, e.g. one hour ago."""
     lang = _LOCAL_MAPPING.get(language, None)
     humanize.i18n.activate(lang)
     tzinfo = timezone(timedelta(hours=timezone_offset))
@@ -29,14 +25,10 @@ def humanize_time(date, language=LANGUAGE, timezone_offset=TIMEZONE_OFFSET):
     print(type(humanize.naturaltime(current - input_date)))
     return humanize.naturaltime(current - input_date)
 
+
 # FORMS UTILS
 def validate_tags_format(form, tags):
-    """
-    Validates that the tags are comma-separated and do not include any whitespaces.
-
-    :param tags: A string containing comma-separated tags
-    :return: A list of valid tags if the format is correct, otherwise raises a ValueError
-    """
+    """Validates that the tags are comma-separated and do not include any whitespaces."""
     if form.tags.data == "":
         return []
 
@@ -73,41 +65,6 @@ def suggest_img_url(directory):
         return lazy_gettext("Suggestion: %(suggestion)s", suggestion=suggestion)
 
 
-
-# DB FILTER UTILS
-def filter_posts_by_tag(tag, current_user, posts):
-    """Filter by tag and draft posts if the user is an admin"""
-    if tag.lower() == "draft" and current_user.is_authenticated and current_user.admin:
-        return [post for post in posts if post.is_draft]
-    else:
-        return [post for post in posts if tag in json.loads(post.tags)]
-
-
-def filter_posts_by_year(year, posts):
-    """Filter by the year the post was created."""
-    return [post for post in posts if year == str(post.create_date.strftime("%Y"))]
-
-
-def hide_drafts(current_user, SUPER_ID, posts):
-    """Filter out drafts if the user is not the author or the super admin"""
-    if current_user.is_authenticated:
-        return [
-            post
-            for post in posts
-            if not post.is_draft
-            or (post.is_draft and post.author_id == current_user.id)
-            or current_user.id == SUPER_ID
-        ]
-    else:
-        return [post for post in posts if not post.is_draft]
-
-
-def filter_posts_by_author(author, user_model, posts):
-    """Filter by the post author."""
-    author_id = user_model.query.filter_by(username=author).first().id
-    return [post for post in posts if author_id == post.author_id]
-
-
 # MISCELLANEOUS
 def get_tags_description(tags):
     """Add description to tag field."""
@@ -118,9 +75,24 @@ def get_tags_description(tags):
     return lazy_gettext("Suggestion: %(suggestion)s", suggestion=suggestion)
 
 
+def tags_to_list(tag_string):
+    """Splits a string with tags separated with pipe delimiter into a python list."""
+    return tag_string.strip("|").split("|")
+
+
+def tags_to_string(form_tags):
+    """Generates the string of tags separated with pipe delimiter for database commit."""
+    return f"|{'|'.join([tag.strip() for tag in form_tags.split(",")])}|"
+
+
+def pipe_tag(tag):
+    """Wraps a tag in pipes for unique identification in SQL queries."""
+    return f"|{tag}|"
+
+
 def get_unique_tags(post_model):
     """Sorted tags by occurence."""
-    all_tags = [json.loads(post.tags) for post in post_model.query.all()]
+    all_tags = [tags_to_list(post.tags) for post in post_model.query.all()]
     unique_tags = set(tag for tags in all_tags for tag in tags)
     tag_counts = Counter(tag for tags in all_tags for tag in tags)
     return sorted(unique_tags, key=lambda tag: tag_counts[tag], reverse=True)
@@ -133,23 +105,21 @@ def get_time(timezone_offset=TIMEZONE_OFFSET):
 
 
 def parse_title(raw_title):
-    """Converts the post title to a url string"""
+    """Converts a post title to a url string."""
     return raw_title.lower().replace(" ", "-")
 
 
 def find_post(title, post_model, user_model):
-    """Uses a lower case title combined with hyphens and returns the corresponding BlogPost object in the database"""
+    """Uses a lower case title combined with hyphens and returns the corresponding post object with author added"""
     all_posts = post_model.query.all()
     post_list = [item for item in all_posts if parse_title(item.title) == title]
     if not post_list:
         raise NotFound()
-    post = post_list[0]
-    post.author = user_model.query.filter_by(id=post.author_id).first()
-    return post
+    return add_author(post_list, user_model)[0]
 
 
 def add_author(list, user_model):
-    """Maps the author id to the User object and attaches the username to each item in the list (BlogPost or BlogComment)"""
+    """Maps the author id to the User object and attaches the username to each item in the list (post or comment)."""
     authors = [post.author_id for post in list]
     usernames = user_model.query.filter(user_model.id.in_(authors)).all()
     user_dict = {user.id: user for user in usernames}
@@ -174,3 +144,14 @@ def calculate_reading_time(text, words_per_minute=200):
     reading_time_minutes = total_words / words_per_minute
     minutes = int(reading_time_minutes)
     return minutes
+
+
+def is_author(current_user, item):
+    """Checks if the current user is either author of the comment/post or super admin or admin if LEVEL_ADMINS=True ."""
+    if current_user.is_anonymous:
+        return False
+    if current_user.id in [item.author_id, SUPER_ID] or (
+        current_user.admin and LEVEL_ADMINS
+    ):
+        return True
+    return False

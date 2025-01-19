@@ -1,9 +1,11 @@
 {% extends "layout.html" %}
 
-{% block title %}Brain Snippets Blog{% endblock %}
+{% block title %}
+  Home  &#124; {{ BLOG_TITLE }}
+{%endblock %}
 
 {% block description %}
-    Read my latest blog post on Brain Snippets. Here I write about Ideas, Thoughts, Conclusions I'd like to share with you.
+    {{ BLOG_DESCRIPTION }}
 {% endblock %}
 
 {% block content %}
@@ -15,7 +17,7 @@
     <div class="row gx-4 gx-lg-5 justify-content-center">
       <div class="col-md-10 col-lg-8 col-xl-7">
         <div class="site-heading">
-          <h1>Brain Snippets</h1>
+          <h1>{{ BLOG_TITLE }}</h1>
           <span class="subheading">Ideas, Thoughts and Conclusions I'd like to share with you.</span>
         </div>
       </div>
@@ -27,28 +29,27 @@
   <div class="row gx-4 gx-lg-5 justify-content-center">
     <div class="col-md-10 col-lg-8 col-xl-7">
       {% if filter %}
-      <div>
         <sup>
           <a href="{{ url_for('home') }}" title="{% trans %}Clear{% endtrans %}">&#x2718;</a> 
-          {% trans trimmed nr_posts=all_posts|length %}
+          {% trans trimmed nr_posts=pagination.total %}
             Found {{ nr_posts }} post
           {% pluralize %}
             Found {{ nr_posts }} posts
           {% endtrans %}
-          {% trans %}for{% endtrans %}
-          {% for filter in filter %}
-            {% if filter[0] %}
-              {% if filter[0] == 'draft' and current_user.admin %}
-                <span class="badge draft-badge">
-                  {{ filter[1] }}: {% trans %}draft{% endtrans %}</span>
-              {% else %}
-                <span class="badge default-badge">
-                {{ filter[1] }}: {{ filter[0] }}</span>
+            {% trans %}for{% endtrans %}
+            {% for filter in filter %}
+              {% if filter[1] %}
+                {% if filter[1] == 'draft' and current_user.admin %}
+                  <span class="badge draft-badge">
+                    {{ filter[0] }}: {% trans %}draft{% endtrans %}</span>
+                {% else %}
+                  <span class="badge default-badge">
+                    {{ filter[0] }}: {{ filter[1] }}
+                  </span>
+                {% endif %}
               {% endif %}
-            {% endif %}
-          {% endfor %}
+            {% endfor %}
         </sup>
-      </div>
       {% endif %}
       <!-- Post preview-->
       {% for post in all_posts %}
@@ -62,17 +63,17 @@
         <p class="post-meta">
           {% trans %}by{% endtrans %}
           <a
-            href="{{ url_for('home', author=post.author.username, tag=request.args.get('tag'), year=request.args.get('year'))}}"
+            href="{{ url_for('home', tag=request.args.get('tag'), year=request.args.get('year'), author=post.author.username) }}"
             >{{ post.author.username }}</a
           >
           {% trans %}on{% endtrans %}
           {% set year = post.create_date|datetimeformat('yyyy') %}
-          <a href="{{ url_for('home', year=year.strip(), tag=request.args.get('tag'), author=request.args.get('author')) }}">
+          <a href="{{ url_for('home', tag=request.args.get('tag'), author=request.args.get('author'), year=year.strip()) }}">
             {% trans trimmed post_publish_date=post.create_date|datetimeformat(DATE_FORMAT) %}
               {{ post_publish_date }}
             {% endtrans %}
           </a>
-          {% if current_user.id == post.author.id or current_user.id == SUPER_ID %}
+          {% if is_author(current_user, post) %}
           <a
             href="{{ url_for('delete_post', post_title=post.title|lower|replace(' ', '-')) }}"
             title="{% trans %}Soft delete{% endtrans %}"
@@ -80,12 +81,12 @@
           >
           {% endif %} 
           {% if post.is_draft %}
-          <a href="{{ url_for('home', tag='draft', year=request.args.get('year'), author=request.args.get('author'))}}"
+          <a href="{{ url_for('home', year=request.args.get('year'), author=request.args.get('author'), tag='draft') }}"
             ><span class="badge draft-badge">{% trans %}draft{% endtrans %}</span></a
           >{% endif %} 
-          {% set tags_list = post.tags|from_json %} 
+          {% set tags_list = post.tags|tags_to_list %} 
           {% for tag in tags_list %}
-          <a href="{{ url_for('home', tag=tag, year=request.args.get('year'), author=request.args.get('author'))}}"
+          <a href="{{ url_for('home', year=request.args.get('year'), author=request.args.get('author'), tag=tag) }}"
             ><span class="badge default-badge">{{ tag }}</span></a
           >
           {% endfor %}
@@ -97,17 +98,17 @@
 
       <!-- Pager-->
       <div class="d-flex justify-content-end mb-4" style="gap: 10px">
-        {% if page > 1 %}
+        {% if pagination.has_prev %}
         <a
           class="btn btn-secondary text-uppercase"
-          href="{{ url_for('home', page=page - 1 ) }}"
+          href="{{ url_for('home', page=pagination.page - 1, author=request.args.get('author'), tag=request.args.get('tag'), year=request.args.get('year') ) }}"
           >{% trans %}Newer Posts{% endtrans %}</a
         >
         {% endif %} 
-        {% if page < max_page %}
+        {% if pagination.has_next %}
         <a
           class="btn btn-secondary text-uppercase"
-          href="{{ url_for('home', page=page + 1 ) }}"
+          href="{{ url_for('home', page=pagination.page + 1, author=request.args.get('author'), tag=request.args.get('tag'), year=request.args.get('year') ) }}"
           >{% trans %}Older Posts{% endtrans %}</a
         >
         {% endif %}
