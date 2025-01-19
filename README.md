@@ -185,8 +185,7 @@ I [extended and customised](https://github.com/timonrieger/blog) this template m
       - Links to: [Tutorial Image](/.github/demo/comments.png)  
       - `True`: Displays the tutorial link.
       - `False`: Hides the tutorial link.
-   - `BLOG_NAME`: The name of your blog (string).
-   - `BLOG_TITLE`: The title that shows up on search machines for the home page (string).
+   - `BLOG_TITLE`: The name of your blog (string).
    - `BLOG_DESCRIPTION`: The description that shows up on search machines for the home page (string).
 
 

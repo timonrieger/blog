@@ -42,7 +42,6 @@ from src.utils import (
 )
 from src.config import (
     ANONYMOUS_ID,
-    BLOG_NAME,
     BLOG_TITLE,
     BLOG_DESCRIPTION,
     COMMENT_RICH_EDITOR,
@@ -170,7 +169,6 @@ def global_vars():
         is_author=is_author,
         COMMENT_RICH_EDITOR=COMMENT_RICH_EDITOR,
         SHOW_COMMENT_TUTORIAL=SHOW_COMMENT_TUTORIAL,
-        BLOG_NAME=BLOG_NAME,
         BLOG_TITLE=BLOG_TITLE,
         BLOG_DESCRIPTION=BLOG_DESCRIPTION,
     )
@@ -618,7 +616,7 @@ def rss_feed():
     rss_feed = f"""<?xml version="1.0" encoding="UTF-8" ?>
     <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
         <channel>
-            <title>{BLOG_NAME}</title>
+            <title>{BLOG_TITLE}</title>
             <link>{url_for('home', _external=True)}</link>
             <atom:link href="{ url_for('rss_feed', _external=True) }" rel="self" type="application/rss+xml" />
             <description>{BLOG_DESCRIPTION}</description>
