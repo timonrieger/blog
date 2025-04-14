@@ -82,7 +82,7 @@ def tags_to_list(tag_string):
 
 def tags_to_string(form_tags):
     """Generates the string of tags separated with pipe delimiter for database commit."""
-    return f"|{'|'.join([tag.strip() for tag in form_tags.split(",")])}|"
+    return f"|{'|'.join([tag.strip() for tag in form_tags.split(',')])}"
 
 
 def pipe_tag(tag):

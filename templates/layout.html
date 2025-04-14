@@ -15,6 +15,17 @@
         text-align: justify
       }
     </style>
+    <!-- Check if migration choice has already been made -->
+    <script>
+      if (!localStorage.getItem('should_migrate')) {
+          if (confirm('I migrated my blog. Would you like to visit the new one?')) {
+              localStorage.setItem('should_migrate', 'true');
+              window.location.href = 'https://timonrieger.com/blog';
+          } else {
+              localStorage.setItem('should_migrate', 'false');
+          }
+      }
+      </script>
     <link
       rel="icon"
       type="image/x-icon"
@@ -117,7 +128,7 @@
     {% block content %}{% endblock %}
     <!-- Footer-->
     <footer class="border-top">
-        <div class="small text-center text-muted fst-italic">&copy; <a href="https://timonrieger.de?utm_source={{ current_url }}">Timon Rieger</a></div>
+        <div class="small text-center text-muted fst-italic">&copy; <a href="https://timonrieger.de">Timon Rieger</a></div>
         &bull;
         <div class="small text-center text-muted fst-italic"><a href="{{ url_for('rss_feed') }}">RSS Feed</a></div>
     </footer>
